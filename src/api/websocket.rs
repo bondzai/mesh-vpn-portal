@@ -19,13 +19,25 @@ pub async fn ws_handler(
         .and_then(|h| h.to_str().ok())
         .unwrap_or("Unknown Device")
         .to_string();
+
+    // Extract Real IP (X-Forwarded-For > X-Real-IP > ConnectInfo)
+    let ip = headers
+        .get("x-forwarded-for")
+        .and_then(|h| h.to_str().ok())
+        .map(|s| s.split(',').next().unwrap_or(s).trim().to_string())
+        .or_else(|| {
+            headers
+                .get("x-real-ip")
+                .and_then(|h| h.to_str().ok())
+                .map(|s| s.to_string())
+        })
+        .unwrap_or_else(|| addr.ip().to_string());
         
-    ws.on_upgrade(move |socket| handle_socket(socket, state, addr, user_agent))
+    ws.on_upgrade(move |socket| handle_socket(socket, state, ip, user_agent))
 }
 
-async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>, addr: SocketAddr, device: String) {
+async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>, ip: String, device: String) {
     // 1. Client connected: increment count and notify everyone
-    let ip = addr.ip().to_string();
     state.join(&ip, &device);
 
     // 2. Subscribe to broadcast updates
