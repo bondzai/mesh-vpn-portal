@@ -14,6 +14,10 @@ mod infrastructure;
 use state::AppState;
 use infrastructure::file_logger::FileLogger;
 
+pub mod admin {
+  pub use crate::api::admin::*;
+}
+
 #[tokio::main]
 async fn main() {
     let logger = Arc::new(FileLogger::new("server.log"));
@@ -23,6 +27,8 @@ async fn main() {
     let app = Router::new()
         .route("/health", get(api::health::health_check))
         .route("/ws", get(api::websocket::ws_handler))
+        .route("/admin", get(api::admin::dashboard))
+        .route("/api/logs", get(api::admin::get_logs).delete(api::admin::clear_logs))
         .with_state(app_state)
         .layer(CorsLayer::permissive());
 
