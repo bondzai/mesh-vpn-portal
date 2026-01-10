@@ -29,6 +29,7 @@ async fn main() {
         .route("/ws", get(api::websocket::ws_handler))
         .route("/admin", get(api::admin::dashboard))
         .route("/api/logs", get(api::admin::get_logs).delete(api::admin::clear_logs))
+        .route("/api/export", get(api::admin::download_logs))
         .with_state(app_state)
         .layer(CorsLayer::permissive());
 

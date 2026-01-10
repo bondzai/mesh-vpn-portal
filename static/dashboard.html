@@ -28,7 +28,16 @@
                     class="bg-white hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 border border-gray-300 rounded-md transition duration-150 ease-in-out">
                     Refresh
                 </button>
-                <button onclick="clearLogs()"
+                <button onclick="initiateAction('export')"
+                    class="bg-white hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 border border-gray-300 rounded-md transition duration-150 ease-in-out flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Export
+                </button>
+                <button onclick="initiateAction('clear')"
                     class="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
@@ -172,13 +181,46 @@
         </div>
     </div>
 
+    <!-- Password Modal -->
+    <div id="passwordModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                    <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                </div>
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mt-4">Admin Authentication</h3>
+                <div class="mt-2 px-7 py-3">
+                    <p class="text-sm text-gray-500 mb-3">Please enter the admin password to proceed.</p>
+                    <input type="password" id="adminPassword"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        placeholder="Password">
+                    <p id="authError" class="text-xs text-red-500 mt-2 hidden">Incorrect password</p>
+                </div>
+                <div class="items-center px-4 py-3">
+                    <button id="authConfirmBtn"
+                        class="px-4 py-2 bg-indigo-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        Confirm
+                    </button>
+                    <button onclick="closeModal()"
+                        class="mt-3 px-4 py-2 bg-white text-gray-700 text-base font-medium rounded-md w-full shadow-sm border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         let allLogs = [];
         let filteredLogs = [];
         let currentPage = 1;
         let itemsPerPage = 25;
         let sortField = 'timestamp';
-        let sortDirection = 'desc'; // 'asc' or 'desc'
+        let sortDirection = 'desc';
+        let pendingAction = null; // 'export' or 'clear'
 
         async function fetchLogs() {
             try {
@@ -188,18 +230,11 @@
                 if (!text.trim()) {
                     allLogs = [];
                 } else {
-                    // Parse CSV: timestamp,ip,device,action,count
                     allLogs = text.trim().split('\n').map(line => {
-                        // Handle potential simple CSV parsing needs (though our logger is simple)
                         const parts = line.split(',');
                         if (parts.length < 5) return null;
-
-                        // Handle date parsing (e.g., 2026-01-10 16:07:46 +0700)
-                        // It's sortable as string mostly, but real Date obj is better for sorting if format varies
-                        const rawTs = parts[0];
-
                         return {
-                            timestamp: rawTs,
+                            timestamp: parts[0],
                             ip: parts[1],
                             device: parts[2],
                             action: parts[3],
@@ -218,14 +253,10 @@
 
         function updateMetrics() {
             document.getElementById('metric-total').textContent = allLogs.length;
-
             const uniqueIps = new Set(allLogs.map(l => l.ip)).size;
             document.getElementById('metric-unique-ips').textContent = uniqueIps;
-
             if (allLogs.length > 0) {
-                const lastLog = allLogs[allLogs.length - 1]; // Assuming appended order (oldest first in file)
-                // Actually file append means last line is newest? Yes "append". 
-                // So last element in array is newest.
+                const lastLog = allLogs[allLogs.length - 1];
                 document.getElementById('metric-active').textContent = lastLog.count;
                 document.getElementById('metric-last').textContent = lastLog.timestamp;
             } else {
@@ -234,24 +265,12 @@
             }
         }
 
-        function handleSearch() {
-            currentPage = 1; // Reset to page 1 on search
-            applyFilterSortPage();
-        }
-
-        function handlePageSize() {
-            itemsPerPage = parseInt(document.getElementById('pageSize').value);
-            currentPage = 1;
-            applyFilterSortPage();
-        }
+        function handleSearch() { currentPage = 1; applyFilterSortPage(); }
+        function handlePageSize() { itemsPerPage = parseInt(document.getElementById('pageSize').value); currentPage = 1; applyFilterSortPage(); }
 
         function handleSort(field) {
-            if (sortField === field) {
-                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-            } else {
-                sortField = field;
-                sortDirection = 'desc'; // Default to desc for new field? or asc. 
-            }
+            if (sortField === field) sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            else { sortField = field; sortDirection = 'desc'; }
             updateSortIcons();
             applyFilterSortPage();
         }
@@ -259,126 +278,123 @@
         function updateSortIcons() {
             ['timestamp', 'ip', 'device', 'action', 'count'].forEach(f => {
                 const el = document.getElementById(`sort-${f}`);
-                if (f === sortField) {
-                    el.textContent = sortDirection === 'asc' ? '↑' : '↓';
-                } else {
-                    el.textContent = '';
-                }
+                if (f === sortField) el.textContent = sortDirection === 'asc' ? '↑' : '↓';
+                else el.textContent = '';
             });
         }
 
         function applyFilterSortPage() {
             const searchText = document.getElementById('searchInput').value.toLowerCase();
-
-            // 1. Filter
-            filteredLogs = allLogs.filter(log => {
-                return log.timestamp.toLowerCase().includes(searchText) ||
-                    log.ip.toLowerCase().includes(searchText) ||
-                    log.device.toLowerCase().includes(searchText) ||
-                    log.action.toLowerCase().includes(searchText);
-            });
-
-            // 2. Sort
+            filteredLogs = allLogs.filter(log =>
+                log.timestamp.toLowerCase().includes(searchText) ||
+                log.ip.toLowerCase().includes(searchText) ||
+                log.device.toLowerCase().includes(searchText) ||
+                log.action.toLowerCase().includes(searchText)
+            );
             filteredLogs.sort((a, b) => {
                 let valA = a[sortField];
                 let valB = b[sortField];
-
-                if (sortField === 'count') {
-                    // Numeric sort
-                    return sortDirection === 'asc' ? valA - valB : valB - valA;
-                }
-
-                // String sort
+                if (sortField === 'count') return sortDirection === 'asc' ? valA - valB : valB - valA;
                 if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
                 if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
                 return 0;
             });
 
-            // Default: show newest first if timestamp desc (which is default)
-            // But wait, the file is appended (oldest -> newest).
-            // So if sortField='timestamp' and sortDirection='desc' (default), we want newest first.
-            // String sort of "2026-01-10..." works correctly.
-
-            // 3. Paginate
             document.getElementById('total-results').textContent = filteredLogs.length;
             const totalPages = Math.ceil(filteredLogs.length / itemsPerPage) || 1;
-
             if (currentPage > totalPages) currentPage = totalPages;
             if (currentPage < 1) currentPage = 1;
 
             const startIndex = (currentPage - 1) * itemsPerPage;
             const endIndex = Math.min(startIndex + itemsPerPage, filteredLogs.length);
-
             document.getElementById('page-start').textContent = filteredLogs.length > 0 ? startIndex + 1 : 0;
             document.getElementById('page-end').textContent = endIndex;
             document.getElementById('page-indicator').textContent = `Page ${currentPage} of ${totalPages}`;
 
-            const pageData = filteredLogs.slice(startIndex, endIndex);
-            renderTable(pageData);
+            renderTable(filteredLogs.slice(startIndex, endIndex));
         }
 
         function changePage(delta) {
             const totalPages = Math.ceil(filteredLogs.length / itemsPerPage) || 1;
             const newPage = currentPage + delta;
-            if (newPage >= 1 && newPage <= totalPages) {
-                currentPage = newPage;
-                applyFilterSortPage();
-            }
+            if (newPage >= 1 && newPage <= totalPages) { currentPage = newPage; applyFilterSortPage(); }
         }
 
         function renderTable(logs) {
             const tbody = document.getElementById('logTableBody');
             tbody.innerHTML = '';
-
-            if (logs.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No logs found</td></tr>';
-                return;
-            }
-
+            if (logs.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No logs found</td></tr>'; return; }
             logs.forEach(log => {
                 const row = document.createElement('tr');
                 row.className = 'hover:bg-gray-50 transition-colors border-b border-gray-100';
-
-                const actionClass = log.action === 'CONNECTED'
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800';
-
+                const actionClass = log.action === 'CONNECTED' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
                 row.innerHTML = `
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">${log.timestamp}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${log.ip}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate" title="${log.device}">${log.device}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${actionClass}">
-                            ${log.action}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">${log.count}</td>
-                `;
+                    <td class="px-6 py-4 whitespace-nowrap text-sm"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${actionClass}">${log.action}</span></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">${log.count}</td>`;
                 tbody.appendChild(row);
             });
         }
 
-        async function clearLogs() {
-            if (confirm('Are you sure you want to clear all logs?')) {
-                await fetch('/api/logs', { method: 'DELETE' });
-                fetchLogs();
+        // Modal & Action Logic
+        function initiateAction(action) {
+            pendingAction = action;
+            document.getElementById('passwordModal').classList.remove('hidden');
+            document.getElementById('adminPassword').value = '';
+            document.getElementById('authError').classList.add('hidden');
+            document.getElementById('adminPassword').focus();
+        }
+
+        function closeModal() {
+            document.getElementById('passwordModal').classList.add('hidden');
+            pendingAction = null;
+        }
+
+        document.getElementById('authConfirmBtn').addEventListener('click', submitPassword);
+        document.getElementById('adminPassword').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') submitPassword();
+        });
+
+        async function submitPassword() {
+            const password = document.getElementById('adminPassword').value;
+            if (!password) return;
+
+            if (pendingAction === 'clear') {
+                const res = await fetch('/api/logs', {
+                    method: 'DELETE',
+                    headers: { 'X-Admin-Password': password }
+                });
+                if (res.ok) {
+                    closeModal();
+                    fetchLogs();
+                } else {
+                    document.getElementById('authError').classList.remove('hidden');
+                }
+            } else if (pendingAction === 'export') {
+                const res = await fetch('/api/export', {
+                    method: 'GET',
+                    headers: { 'X-Admin-Password': password }
+                });
+                if (res.ok) {
+                    const blob = await res.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = "server_logs.csv";
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    closeModal();
+                } else {
+                    document.getElementById('authError').classList.remove('hidden');
+                }
             }
         }
 
-        // Initial search - default sort to Timestamp DESC (newest first)
-        // Note: logs are appended, so array is Ascending by default.
-        // We set sortDirection = 'desc' initially.
         fetchLogs();
-
-        // Polling
-        setInterval(() => {
-            // Only auto-refresh if user is on first page and not searching/sorting weirdly?
-            // For now, always refresh data but keep view stable?
-            // "fetchLogs" rewrites allLogs.
-            // Then calls applyFilterSortPage using CURRENT state (page, sort, filter).
-            // So it should be non-intrusive.
-            fetchLogs();
-        }, 5000); // 5 seconds maybe better for pagination stability
+        setInterval(fetchLogs, 5000);
     </script>
 </body>
 
