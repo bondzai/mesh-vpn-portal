@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+pub mod logger;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserStats {
     #[serde(rename = "activeUsers")]

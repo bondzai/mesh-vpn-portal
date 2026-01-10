@@ -1,20 +1,32 @@
 use axum::{
-    extract::{ws::{Message, WebSocket, WebSocketUpgrade}, State},
+    extract::{ws::{Message, WebSocket, WebSocketUpgrade}, State, ConnectInfo},
     response::IntoResponse,
+    http::HeaderMap,
 };
+use std::net::SocketAddr;
 use std::sync::Arc;
 use crate::state::AppState;
 
 pub async fn ws_handler(
     ws: WebSocketUpgrade,
     State(state): State<Arc<AppState>>,
+    ConnectInfo(addr): ConnectInfo<SocketAddr>,
+    headers: HeaderMap,
 ) -> impl IntoResponse {
-    ws.on_upgrade(|socket| handle_socket(socket, state))
+    // Extract User-Agent
+    let user_agent = headers
+        .get(axum::http::header::USER_AGENT)
+        .and_then(|h| h.to_str().ok())
+        .unwrap_or("Unknown Device")
+        .to_string();
+        
+    ws.on_upgrade(move |socket| handle_socket(socket, state, addr, user_agent))
 }
 
-async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>) {
+async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>, addr: SocketAddr, device: String) {
     // 1. Client connected: increment count and notify everyone
-    state.join();
+    let ip = addr.ip().to_string();
+    state.join(&ip, &device);
 
     // 2. Subscribe to broadcast updates
     let mut rx = state.tx.subscribe();
@@ -27,7 +39,7 @@ async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>) {
     }).unwrap();
     
     if socket.send(Message::Text(initial_msg.into())).await.is_err() {
-        state.leave();
+        state.leave(&ip, &device);
         return;
     }
 
@@ -52,5 +64,5 @@ async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>) {
     }
 
     // 5. Client disconnected: decrement count and notify everyone
-    state.leave();
+    state.leave(&ip, &device);
 }

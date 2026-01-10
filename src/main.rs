@@ -9,12 +9,15 @@ use std::sync::Arc;
 mod domain;
 mod api;
 mod state;
+mod infrastructure;
 
 use state::AppState;
+use infrastructure::file_logger::FileLogger;
 
 #[tokio::main]
 async fn main() {
-    let app_state = AppState::new();
+    let logger = Arc::new(FileLogger::new("server.log"));
+    let app_state = AppState::new(logger);
 
     // build our application with a route
     let app = Router::new()
@@ -29,5 +32,5 @@ async fn main() {
     
     // Axum 0.8 uses axum::serve
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>()).await.unwrap();
 }
