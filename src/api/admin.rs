@@ -1,9 +1,30 @@
+use crate::state::AppState;
+use std::sync::Arc;
 use axum::{
     response::{Html, IntoResponse, Json},
     http::{StatusCode, HeaderMap, header},
+    extract::State,
 };
 use std::fs;
 use serde_json::json;
+
+pub async fn get_system_status(State(state): State<Arc<AppState>>) -> impl IntoResponse {
+    let mut sys = state.system.lock().unwrap();
+    sys.refresh_cpu_all();
+    sys.refresh_memory();
+
+    let uptime = state.start_time.elapsed().as_secs();
+    let total_mem = sys.total_memory() / 1024 / 1024; // MB
+    let used_mem = sys.used_memory() / 1024 / 1024; // MB
+    let cpu_usage = sys.global_cpu_usage();
+
+    Json(json!({
+        "uptime_seconds": uptime,
+        "memory_used_mb": used_mem,
+        "memory_total_mb": total_mem,
+        "cpu_usage_percent": cpu_usage
+    })).into_response()
+}
 
 // Helper to get log path
 const LOG_PATH: &str = "server.log";

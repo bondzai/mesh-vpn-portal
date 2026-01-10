@@ -21,7 +21,7 @@ pub mod admin {
 #[tokio::main]
 async fn main() {
     let logger = Arc::new(FileLogger::new("server.log"));
-    let app_state = AppState::new(logger);
+    let app_state = Arc::new(AppState::new(logger));
 
     // build our application with a route
     let app = Router::new()
@@ -30,6 +30,7 @@ async fn main() {
         .route("/admin", get(api::admin::dashboard))
         .route("/api/logs", get(api::admin::get_logs).delete(api::admin::clear_logs))
         .route("/api/export", get(api::admin::download_logs))
+        .route("/api/status", get(api::admin::get_system_status))
         .with_state(app_state)
         .layer(CorsLayer::permissive());
 
