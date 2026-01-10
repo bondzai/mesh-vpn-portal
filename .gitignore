@@ -12,3 +12,9 @@ Thumbs.db
 
 # Node (verification dependencies)
 node_modules
+
+# Python
+__pycache__
+
+# Log
+server.log
