@@ -1,0 +1,5 @@
+### Health Check
+GET http://localhost:3000/health
+
+### WebSocket Endpoint (For reference / tools that support WS)
+# WS ws://localhost:3000/ws
