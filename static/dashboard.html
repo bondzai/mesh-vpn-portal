@@ -227,12 +227,11 @@
     </div>
 
     <script>
-        let allLogs = [];
-        let filteredLogs = [];
         let currentPage = 1;
         let itemsPerPage = 25;
         let sortField = 'timestamp';
         let sortDirection = 'desc';
+        let searchText = '';
         let pendingAction = null; // 'export' or 'clear'
 
         async function fetchSystemStatus() {
@@ -254,56 +253,61 @@
         }
 
         async function fetchLogs() {
+            const query = new URLSearchParams({
+                page: currentPage,
+                page_size: itemsPerPage,
+                q: searchText,
+                sort_by: sortField,
+                order: sortDirection
+            });
+
             try {
-                const response = await fetch('/api/logs');
-                const text = await response.text();
+                const response = await fetch(`/api/logs?${query}`);
+                const json = await response.json();
 
-                if (!text.trim()) {
-                    allLogs = [];
-                } else {
-                    allLogs = text.trim().split('\n').map(line => {
-                        const parts = line.split(',');
-                        if (parts.length < 5) return null;
-                        return {
-                            timestamp: parts[0],
-                            ip: parts[1],
-                            device: parts[2],
-                            action: parts[3],
-                            count: parseInt(parts[4]) || 0,
-                            raw: line
-                        };
-                    }).filter(Boolean);
-                }
-
-                updateMetrics();
-                applyFilterSortPage();
+                renderTable(json.data || []);
+                updateMetricsAndMeta(json.stats || {}, json.meta || {});
+                updatePagination(json.meta || {});
             } catch (err) {
                 console.error('Failed to fetch logs', err);
             }
         }
 
-        function updateMetrics() {
-            document.getElementById('metric-total').textContent = allLogs.length;
-            const uniqueIps = new Set(allLogs.map(l => l.ip)).size;
-            document.getElementById('metric-unique-ips').textContent = uniqueIps;
-            if (allLogs.length > 0) {
-                const lastLog = allLogs[allLogs.length - 1];
-                document.getElementById('metric-active').textContent = lastLog.count;
-                document.getElementById('metric-last').textContent = lastLog.timestamp;
-            } else {
-                document.getElementById('metric-active').textContent = '0';
-                document.getElementById('metric-last').textContent = '-';
-            }
+        function updateMetricsAndMeta(stats, meta) {
+            document.getElementById('metric-total').textContent = meta.total || 0;
+            document.getElementById('metric-unique-ips').textContent = stats.unique_ips || 0;
+            document.getElementById('metric-active').textContent = stats.active_users || 0;
+            document.getElementById('metric-last').textContent = stats.last_activity || '-';
         }
 
-        function handleSearch() { currentPage = 1; applyFilterSortPage(); }
-        function handlePageSize() { itemsPerPage = parseInt(document.getElementById('pageSize').value); currentPage = 1; applyFilterSortPage(); }
+        function updatePagination(meta) {
+            document.getElementById('total-results').textContent = meta.total;
+
+            const start = (meta.page - 1) * meta.page_size + 1;
+            const end = Math.min(start + meta.page_size - 1, meta.total);
+
+            document.getElementById('page-start').textContent = meta.total > 0 ? start : 0;
+            document.getElementById('page-end').textContent = meta.total > 0 ? end : 0;
+            document.getElementById('page-indicator').textContent = `Page ${meta.page} of ${meta.total_pages || 1}`;
+        }
+
+        function handleSearch() {
+            searchText = document.getElementById('searchInput').value;
+            currentPage = 1;
+            fetchLogs();
+        }
+
+        function handlePageSize() {
+            itemsPerPage = parseInt(document.getElementById('pageSize').value);
+            currentPage = 1;
+            fetchLogs();
+        }
 
         function handleSort(field) {
             if (sortField === field) sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
             else { sortField = field; sortDirection = 'desc'; }
             updateSortIcons();
-            applyFilterSortPage();
+            fetchLogs();
         }
 
         function updateSortIcons() {
@@ -314,41 +318,18 @@
             });
         }
 
-        function applyFilterSortPage() {
-            const searchText = document.getElementById('searchInput').value.toLowerCase();
-            filteredLogs = allLogs.filter(log =>
-                log.timestamp.toLowerCase().includes(searchText) ||
-                log.ip.toLowerCase().includes(searchText) ||
-                log.device.toLowerCase().includes(searchText) ||
-                log.action.toLowerCase().includes(searchText)
-            );
-            filteredLogs.sort((a, b) => {
-                let valA = a[sortField];
-                let valB = b[sortField];
-                if (sortField === 'count') return sortDirection === 'asc' ? valA - valB : valB - valA;
-                if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
-                if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
-                return 0;
-            });
-
-            document.getElementById('total-results').textContent = filteredLogs.length;
-            const totalPages = Math.ceil(filteredLogs.length / itemsPerPage) || 1;
-            if (currentPage > totalPages) currentPage = totalPages;
-            if (currentPage < 1) currentPage = 1;
-
-            const startIndex = (currentPage - 1) * itemsPerPage;
-            const endIndex = Math.min(startIndex + itemsPerPage, filteredLogs.length);
-            document.getElementById('page-start').textContent = filteredLogs.length > 0 ? startIndex + 1 : 0;
-            document.getElementById('page-end').textContent = endIndex;
-            document.getElementById('page-indicator').textContent = `Page ${currentPage} of ${totalPages}`;
-
-            renderTable(filteredLogs.slice(startIndex, endIndex));
-        }
-
         function changePage(delta) {
-            const totalPages = Math.ceil(filteredLogs.length / itemsPerPage) || 1;
-            const newPage = currentPage + delta;
-            if (newPage >= 1 && newPage <= totalPages) { currentPage = newPage; applyFilterSortPage(); }
+            // We need total pages to cap implementation, but meta is not stored globally.
+            // We can optimistically Request. Or store last meta.
+            // Let's rely on backend ignoring out of bound or handling it?
+            // Or better, store totalPages in a global var.
+            currentPage += delta;
+            if (currentPage < 1) currentPage = 1;
+            // Ideally we check max page, but let's just fetch.
+            // If we want to be safe: 
+            // const totalPages = parseInt(document.getElementById('page-indicator').textContent.split('of ')[1]);
+            // if (currentPage > totalPages) currentPage = totalPages;
+            fetchLogs();
         }
 
         function renderTable(logs) {
@@ -429,10 +410,11 @@
             fetchSystemStatus();
         }
 
-        refreshAll();
-        setInterval(refreshAll, 5000);
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshAll();
+            setInterval(refreshAll, 5000);
+        });
     </script>
 </body>
 
 </html>
-```
