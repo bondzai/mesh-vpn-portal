@@ -3,3 +3,4 @@ pub mod websocket;
 pub mod admin;
 pub mod htmx;
 pub mod middleware;
+pub mod auth;

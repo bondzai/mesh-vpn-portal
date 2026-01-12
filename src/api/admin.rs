@@ -7,9 +7,10 @@ use axum::{
     body::Body,
 };
 use std::fs;
+use std::env;
 use serde_json::json;
 
-pub async fn get_system_status(State(state): State<Arc<AppState>>) -> impl IntoResponse {
+pub async fn get_system_status(State(state): State<AppState>) -> impl IntoResponse {
     let mut sys = state.system.lock().unwrap();
     sys.refresh_cpu_all();
     sys.refresh_memory();
@@ -29,7 +30,6 @@ pub async fn get_system_status(State(state): State<Arc<AppState>>) -> impl IntoR
 
 // Helper to get log path
 const LOG_PATH: &str = "server.log";
-const ADMIN_PASSWORD: &str = "admin";
 
 pub async fn dashboard() -> impl IntoResponse {
     match fs::read_to_string("static/dashboard.html") {
@@ -52,10 +52,15 @@ pub async fn get_logs(Query(params): Query<LogQuery>) -> impl IntoResponse {
 }
 
 fn check_auth(headers: &HeaderMap) -> bool {
+    let expected = match env::var("ADMIN_PASSWORD") {
+        Ok(v) => v,
+        Err(_) => return false,
+    };
+
     headers
         .get("x-admin-password")
         .and_then(|h| h.to_str().ok())
-        .map(|pwd| pwd == ADMIN_PASSWORD)
+        .map(|pwd| pwd == expected)
         .unwrap_or(false)
 }
 

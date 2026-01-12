@@ -1,11 +1,10 @@
 use axum::{
     extract::{Query, State},
     response::{Html, IntoResponse, Response},
-    http::{StatusCode, HeaderMap},
+    http::StatusCode,
 };
-use base64::{engine::general_purpose, Engine as _};
 use askama::Template;
-use std::sync::Arc;
+use std::env;
 use crate::state::AppState;
 use crate::domain::{LogEntry, LogQuery};
 use crate::services::log_service;
@@ -82,21 +81,13 @@ pub struct LoggedOutTemplate;
 // Handlers
 
 pub async fn dashboard_handler(
-    State(state): State<Arc<AppState>>,
-    headers: HeaderMap,
+    State(state): State<AppState>,
     Query(params): Query<LogQuery>,
 ) -> impl IntoResponse {
     let (logs, meta, stats) = log_service::fetch_logs(&params);
     let (uptime, cpu, ram) = get_system_metrics(&state);
 
-    let username = headers
-        .get("Authorization")
-        .and_then(|h| h.to_str().ok())
-        .and_then(|h| h.strip_prefix("Basic "))
-        .and_then(|encoded| general_purpose::STANDARD.decode(encoded).ok())
-        .and_then(|decoded| String::from_utf8(decoded).ok())
-        .map(|creds| creds.split(':').next().unwrap_or("").to_string())
-        .unwrap_or_default();
+    let username = env::var("ADMIN_USERNAME").unwrap_or_else(|_| "admin".to_string());
 
     HtmlTemplate(DashboardTemplate {
         username,
@@ -119,7 +110,7 @@ pub async fn dashboard_handler(
 }
 
 pub async fn stats_handler(
-    State(state): State<Arc<AppState>>,
+    State(state): State<AppState>,
 ) -> impl IntoResponse {
     let params = LogQuery {
         page: 1,
@@ -164,7 +155,7 @@ pub async fn logged_out_handler() -> impl IntoResponse {
 }
 
 // Helper for System Metrics
-fn get_system_metrics(state: &Arc<AppState>) -> (String, String, String) {
+fn get_system_metrics(state: &AppState) -> (String, String, String) {
     let mut sys = state.system.lock().unwrap();
     sys.refresh_cpu_all();
     sys.refresh_memory();

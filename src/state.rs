@@ -6,13 +6,17 @@ use std::time::Instant;
 
 use crate::domain::UserStats;
 use std::collections::HashMap;
+use axum_extra::extract::cookie::Key;
+use axum::extract::FromRef;
 
+#[derive(Clone)]
 pub struct AppState {
-    pub active_connections: Mutex<HashMap<String, u32>>,
+    pub active_connections: Arc<Mutex<HashMap<String, u32>>>,
     pub tx: broadcast::Sender<UserStats>, // Changed from String
     pub logger: Arc<dyn EventLogger + Send + Sync>,
     pub system: Arc<Mutex<System>>,
     pub start_time: Instant,
+    pub key: Key,
 }
 
 impl AppState {
@@ -23,11 +27,12 @@ impl AppState {
         sys.refresh_all();
         
         Self {
-            active_connections: Mutex::new(HashMap::new()),
+            active_connections: Arc::new(Mutex::new(HashMap::new())),
             tx,
             logger,
             system: Arc::new(Mutex::new(sys)),
             start_time: Instant::now(),
+            key: Key::generate(),
         }
     }
     pub fn join(&self, ip: &str, device: &str, device_id: &str) -> u32 {
@@ -60,5 +65,11 @@ impl AppState {
     // Helper to get current count without modifying state
     pub fn get_active_count(&self) -> u32 {
         self.active_connections.lock().unwrap().len() as u32
+    }
+}
+
+impl FromRef<AppState> for Key {
+    fn from_ref(state: &AppState) -> Self {
+        state.key.clone()
     }
 }

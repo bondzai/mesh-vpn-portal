@@ -34,10 +34,10 @@
                     <div class="ml-3 relative flex items-center gap-4">
                         <span class="text-sm font-medium text-gray-700">Hello, {{ username }}</span>
                         <div class="border-l border-gray-300 h-6"></div>
-                        <button onclick="logout()"
+                        <a href="/logout"
                             class="text-sm font-medium text-red-600 hover:text-red-800 focus:outline-none">
                             Logout
-                        </button>
+                        </a>
                     </div>
                     {% else %}
                     <a href="/admin" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
@@ -56,13 +56,6 @@
         </div>
     </main>
 
-    <script>
-        function logout() {
-            // Force browser to overwrite cached credentials by navigating with invalid ones.
-            // This is a standard trick to "logout" of Basic Auth.
-            window.location.href = window.location.protocol + "//logout:logout@" + window.location.host + "/logged_out";
-        }
-    </script>
     {% block scripts %}{% endblock %}
 </body>
 

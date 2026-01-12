@@ -10,7 +10,7 @@ use crate::state::AppState;
 
 pub async fn ws_handler(
     ws: WebSocketUpgrade,
-    State(state): State<Arc<AppState>>,
+    State(state): State<AppState>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     headers: HeaderMap,
     Query(params): Query<HashMap<String, String>>,
@@ -41,7 +41,7 @@ pub async fn ws_handler(
     ws.on_upgrade(move |socket| handle_socket(socket, state, ip, user_agent, device_id))
 }
 
-async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>, ip: String, device: String, device_id: String) {
+async fn handle_socket(mut socket: WebSocket, state: AppState, ip: String, device: String, device_id: String) {
     // 1. Client connected: increment count and notify everyone
     state.join(&ip, &device, &device_id);
 
