@@ -1,9 +1,10 @@
 use crate::state::AppState;
 use std::sync::Arc;
 use axum::{
-    response::{Html, IntoResponse, Json},
+    response::{Html, IntoResponse, Json, Response},
     http::{StatusCode, HeaderMap, header},
-    extract::State,
+    extract::{State, Query},
+    body::Body,
 };
 use std::fs;
 use serde_json::json;
@@ -37,7 +38,6 @@ pub async fn dashboard() -> impl IntoResponse {
     }
 }
 
-use axum::extract::Query;
 use crate::domain::{LogQuery, LogsResponse};
 use crate::services::log_service;
 
@@ -84,6 +84,12 @@ pub async fn download_logs(headers: HeaderMap) -> impl IntoResponse {
         },
         Err(_) => (StatusCode::NOT_FOUND, "No logs found").into_response(), 
     }
+}
+
+pub async fn logout_handler() -> impl IntoResponse {
+    let mut response = Response::new(Body::empty());
+    *response.status_mut() = StatusCode::OK;
+    response
 }
 
 

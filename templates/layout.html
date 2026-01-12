@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Server Logs Dashboard{% endblock %}</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <!-- Navbar -->
+    <nav class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <span class="text-xl font-bold text-gray-900">Admin Dashboard</span>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    {% if !username.is_empty() %}
+                    <div class="ml-3 relative flex items-center gap-4">
+                        <span class="text-sm font-medium text-gray-700">Hello, {{ username }}</span>
+                        <div class="border-l border-gray-300 h-6"></div>
+                        <button onclick="logout()"
+                            class="text-sm font-medium text-red-600 hover:text-red-800 focus:outline-none">
+                            Logout
+                        </button>
+                    </div>
+                    {% else %}
+                    <a href="/admin" class="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+                        Log in
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Content -->
+    <main class="flex-grow p-8">
+        <div class="max-w-7xl mx-auto">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <script>
+        function logout() {
+            // Force browser to overwrite cached credentials by navigating with invalid ones.
+            // This is a standard trick to "logout" of Basic Auth.
+            window.location.href = window.location.protocol + "//logout:logout@" + window.location.host + "/logged_out";
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

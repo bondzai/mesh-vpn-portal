@@ -1,8 +1,9 @@
 use axum::{
     extract::{Query, State},
     response::{Html, IntoResponse, Response},
-    http::StatusCode,
+    http::{StatusCode, HeaderMap},
 };
+use base64::{engine::general_purpose, Engine as _};
 use askama::Template;
 use std::sync::Arc;
 use crate::state::AppState;
@@ -32,6 +33,7 @@ where
 #[derive(Template)]
 #[template(path = "dashboard.html")]
 pub struct DashboardTemplate {
+    pub username: String,
     pub total_events: usize,
     pub unique_ips: usize,
     pub active_users: u32,
@@ -73,16 +75,31 @@ pub struct TableTemplate {
     pub order: String,
 }
 
+#[derive(Template)]
+#[template(path = "logged_out.html")]
+pub struct LoggedOutTemplate;
+
 // Handlers
 
 pub async fn dashboard_handler(
     State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
     Query(params): Query<LogQuery>,
 ) -> impl IntoResponse {
     let (logs, meta, stats) = log_service::fetch_logs(&params);
     let (uptime, cpu, ram) = get_system_metrics(&state);
 
+    let username = headers
+        .get("Authorization")
+        .and_then(|h| h.to_str().ok())
+        .and_then(|h| h.strip_prefix("Basic "))
+        .and_then(|encoded| general_purpose::STANDARD.decode(encoded).ok())
+        .and_then(|decoded| String::from_utf8(decoded).ok())
+        .map(|creds| creds.split(':').next().unwrap_or("").to_string())
+        .unwrap_or_default();
+
     HtmlTemplate(DashboardTemplate {
+        username,
         total_events: meta.total,
         unique_ips: stats.unique_ips,
         active_users: stats.active_users,
@@ -140,6 +157,10 @@ pub async fn logs_handler(
         sort_by: params.sort_by,
         order: params.order,
     })
+}
+
+pub async fn logged_out_handler() -> impl IntoResponse {
+    HtmlTemplate(LoggedOutTemplate)
 }
 
 // Helper for System Metrics
