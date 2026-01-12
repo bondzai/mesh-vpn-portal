@@ -34,6 +34,7 @@ pub struct DashboardTemplate {
     pub username: String,
     pub total_events: usize,
     pub unique_ips: usize,
+    pub unique_device_ids: usize,
     pub active_users: u32,
     pub uptime: String,
     pub cpu: String,
@@ -56,6 +57,7 @@ pub struct DashboardTemplate {
 pub struct StatsTemplate {
     pub total_events: usize,
     pub unique_ips: usize,
+    pub unique_device_ids: usize,
     pub active_users: u32,
     pub uptime: String,
     pub cpu: String,
@@ -94,6 +96,7 @@ pub async fn dashboard_handler(
         username,
         total_events: meta.total,
         unique_ips: stats.unique_ips,
+        unique_device_ids: stats.unique_device_ids,
         active_users: stats.active_users,
         uptime,
         cpu,
@@ -140,6 +143,7 @@ pub async fn stats_handler(
     HtmlTemplate(StatsTemplate {
         total_events: meta.total,
         unique_ips: stats.unique_ips,
+        unique_device_ids: stats.unique_device_ids,
         active_users: stats.active_users,
         uptime,
         cpu,

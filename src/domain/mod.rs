@@ -47,6 +47,7 @@ pub struct LogsResponse {
 #[derive(Debug, Serialize)]
 pub struct LogStats {
     pub unique_ips: usize,
+    pub unique_device_ids: usize,
     pub active_users: u32,
     pub last_activity: String,
 }

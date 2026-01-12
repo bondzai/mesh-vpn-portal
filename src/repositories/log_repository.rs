@@ -78,7 +78,7 @@ impl LogRepository for FileLogRepository {
             Err(_) => return (
                 vec![], 
                 LogMetadata { total: 0, page: 1, page_size: params.page_size, total_pages: 0 }, 
-                LogStats { unique_ips: 0, active_users: 0, last_activity: "-".to_string() }
+                LogStats { unique_ips: 0, unique_device_ids: 0, active_users: 0, last_activity: "-".to_string() }
             ),
         };
 
@@ -125,6 +125,7 @@ impl LogRepository for FileLogRepository {
         
         // Stats
         let unique_ips = all_logs.iter().map(|l| &l.ip).collect::<HashSet<_>>().len();
+        let unique_device_ids = all_logs.iter().map(|l| &l.device_id).collect::<HashSet<_>>().len();
         let (active_users, last_activity) = if let Some(last) = all_logs.last() {
             (last.count, last.timestamp.clone())
         } else {
@@ -165,6 +166,7 @@ impl LogRepository for FileLogRepository {
             },
             LogStats {
                 unique_ips,
+                unique_device_ids,
                 active_users,
                 last_activity,
             }
