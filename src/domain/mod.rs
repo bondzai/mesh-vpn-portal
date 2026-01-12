@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 pub mod logger;
+pub mod repositories;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserStats {

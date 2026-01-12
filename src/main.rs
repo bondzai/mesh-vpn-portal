@@ -11,9 +11,11 @@ mod api;
 mod state;
 mod infrastructure;
 mod services;
+mod repositories;
 
 use state::AppState;
 use infrastructure::file_logger::FileLogger;
+use repositories::log_repository::FileLogRepository;
 
 pub mod admin {
   pub use crate::api::admin::*;
@@ -23,7 +25,8 @@ pub mod admin {
 async fn main() {
     dotenvy::dotenv().ok();
     let logger = Arc::new(FileLogger::new("server.log"));
-    let app_state = AppState::new(logger);
+    let log_repo = Arc::new(FileLogRepository::new("server.log"));
+    let app_state = AppState::new(logger, log_repo);
 
     let app = Router::new()
         .route("/health", get(api::health::health_check))

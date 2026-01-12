@@ -1,4 +1,5 @@
 use crate::domain::logger::EventLogger; // Import trait
+use crate::domain::repositories::LogRepository;
 use std::sync::{Arc, Mutex};
 use tokio::sync::broadcast;
 use sysinfo::System; // Ensure trait is imported for refresh methods
@@ -14,13 +15,14 @@ pub struct AppState {
     pub active_connections: Arc<Mutex<HashMap<String, u32>>>,
     pub tx: broadcast::Sender<UserStats>, // Changed from String
     pub logger: Arc<dyn EventLogger + Send + Sync>,
+    pub log_repository: Arc<dyn LogRepository>,
     pub system: Arc<Mutex<System>>,
     pub start_time: Instant,
     pub key: Key,
 }
 
 impl AppState {
-    pub fn new(logger: Arc<dyn EventLogger + Send + Sync>) -> Self {
+    pub fn new(logger: Arc<dyn EventLogger + Send + Sync>, log_repository: Arc<dyn LogRepository>) -> Self {
         let (tx, _) = broadcast::channel(100);
         
         let mut sys = System::new_all();
@@ -30,6 +32,7 @@ impl AppState {
             active_connections: Arc::new(Mutex::new(HashMap::new())),
             tx,
             logger,
+            log_repository,
             system: Arc::new(Mutex::new(sys)),
             start_time: Instant::now(),
             key: Key::generate(),

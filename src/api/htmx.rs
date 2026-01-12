@@ -7,7 +7,6 @@ use askama::Template;
 use std::env;
 use crate::state::AppState;
 use crate::domain::{LogEntry, LogQuery, NavItem};
-use crate::services::log_service;
 
 // Wrapper struct for templates to implement IntoResponse
 pub struct HtmlTemplate<T>(pub T);
@@ -86,7 +85,7 @@ pub async fn dashboard_handler(
     State(state): State<AppState>,
     Query(params): Query<LogQuery>,
 ) -> impl IntoResponse {
-    let (logs, meta, stats) = log_service::fetch_logs(&params);
+    let (logs, meta, stats) = state.log_repository.find_all(&params);
     let (uptime, cpu, ram) = get_system_metrics(&state);
 
     let username = env::var("ADMIN_USERNAME").unwrap_or_else(|_| "admin".to_string());
@@ -135,7 +134,7 @@ pub async fn stats_handler(
         order: "desc".to_string(),
     };
     
-    let (_, meta, stats) = log_service::fetch_logs(&params);
+    let (_, meta, stats) = state.log_repository.find_all(&params);
     let (uptime, cpu, ram) = get_system_metrics(&state);
 
     HtmlTemplate(StatsTemplate {
@@ -149,9 +148,10 @@ pub async fn stats_handler(
 }
 
 pub async fn logs_handler(
+    State(state): State<AppState>,
     Query(params): Query<LogQuery>,
 ) -> impl IntoResponse {
-    let (logs, meta, _) = log_service::fetch_logs(&params);
+    let (logs, meta, _) = state.log_repository.find_all(&params);
 
     HtmlTemplate(TableTemplate {
         logs,
