@@ -10,6 +10,7 @@ mod domain;
 mod api;
 mod state;
 mod infrastructure;
+mod services;
 
 use state::AppState;
 use infrastructure::file_logger::FileLogger;
@@ -23,18 +24,18 @@ async fn main() {
     let logger = Arc::new(FileLogger::new("server.log"));
     let app_state = Arc::new(AppState::new(logger));
 
-    // build our application with a route
     let app = Router::new()
         .route("/health", get(api::health::health_check))
         .route("/ws", get(api::websocket::ws_handler))
-        .route("/admin", get(api::admin::dashboard))
+        .route("/admin", get(api::htmx::dashboard_handler))
+        .route("/htmx/stats", get(api::htmx::stats_handler))
+        .route("/htmx/logs", get(api::htmx::logs_handler))
         .route("/api/logs", get(api::admin::get_logs).delete(api::admin::clear_logs))
         .route("/api/export", get(api::admin::download_logs))
         .route("/api/status", get(api::admin::get_system_status))
         .with_state(app_state)
         .layer(CorsLayer::permissive());
 
-    // run it
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
     println!("listening on {}", addr);
     
