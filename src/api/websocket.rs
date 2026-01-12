@@ -1,8 +1,9 @@
 use axum::{
-    extract::{ws::{Message, WebSocket, WebSocketUpgrade}, State, ConnectInfo},
+    extract::{ws::{Message, WebSocket, WebSocketUpgrade}, State, ConnectInfo, Query},
     response::IntoResponse,
     http::HeaderMap,
 };
+use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use crate::state::AppState;
@@ -12,6 +13,7 @@ pub async fn ws_handler(
     State(state): State<Arc<AppState>>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     headers: HeaderMap,
+    Query(params): Query<HashMap<String, String>>,
 ) -> impl IntoResponse {
     // Extract User-Agent
     let user_agent = headers
@@ -19,6 +21,9 @@ pub async fn ws_handler(
         .and_then(|h| h.to_str().ok())
         .unwrap_or("Unknown Device")
         .to_string();
+
+    // Extract Device ID
+    let device_id = params.get("device_id").cloned().unwrap_or_else(|| "unknown-id".to_string());
 
     // Extract Real IP (X-Forwarded-For > X-Real-IP > ConnectInfo)
     let ip = headers
@@ -33,25 +38,25 @@ pub async fn ws_handler(
         })
         .unwrap_or_else(|| addr.ip().to_string());
         
-    ws.on_upgrade(move |socket| handle_socket(socket, state, ip, user_agent))
+    ws.on_upgrade(move |socket| handle_socket(socket, state, ip, user_agent, device_id))
 }
 
-async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>, ip: String, device: String) {
+async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>, ip: String, device: String, device_id: String) {
     // 1. Client connected: increment count and notify everyone
-    state.join(&ip, &device);
+    state.join(&ip, &device, &device_id);
 
     // 2. Subscribe to broadcast updates
     let mut rx = state.tx.subscribe();
 
     // 3. Send initial state immediately
-    let initial_count = state.active_users.load(std::sync::atomic::Ordering::Relaxed);
+    let initial_count = state.get_active_count();
     let initial_msg = serde_json::to_string(&crate::domain::UserStats {
         active_users: initial_count,
         total_users: initial_count,
     }).unwrap();
     
     if socket.send(Message::Text(initial_msg.into())).await.is_err() {
-        state.leave(&ip, &device);
+        state.leave(&ip, &device, &device_id);
         return;
     }
 
@@ -60,7 +65,7 @@ async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>, ip: String, 
         tokio::select! {
             // Receive update from channel
             Ok(msg) = rx.recv() => {
-                let json = serde_json::to_string(&msg).unwrap();
+                let json = serde_json::to_string(&msg).unwrap(); // msg is UserStats, so this produces {"activeUsers":...}
                 if socket.send(Message::Text(json.into())).await.is_err() {
                     break;
                 }
@@ -76,5 +81,5 @@ async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>, ip: String, 
     }
 
     // 5. Client disconnected: decrement count and notify everyone
-    state.leave(&ip, &device);
+    state.leave(&ip, &device, &device_id);
 }

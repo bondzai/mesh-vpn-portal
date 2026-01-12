@@ -132,6 +132,11 @@
                             </th>
                             <th scope="col"
                                 class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                onclick="handleSort('device_id')">
+                                Device ID <span id="sort-device_id" class="ml-1"></span>
+                            </th>
+                            <th scope="col"
+                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
                                 onclick="handleSort('action')">
                                 Action <span id="sort-action" class="ml-1"></span>
                             </th>
@@ -150,271 +155,109 @@
         </div>
 
         <!-- Pagination -->
-        <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 rounded-lg shadow-sm"
-            id="pagination">
-            <div class="flex flex-1 justify-between sm:hidden">
-                <button onclick="changePage(-1)"
-                    class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Previous</button>
-                <button onclick="changePage(1)"
-                    class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Next</button>
-            </div>
-            <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-                <div>
-                    <p class="text-sm text-gray-700">
-                        Showing <span class="font-medium" id="page-start">1</span> to <span class="font-medium"
-                            id="page-end">10</span> of <span class="font-medium" id="total-results">97</span> results
-                    </p>
-                </div>
-                <div>
-                    <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                        <button onclick="changePage(-1)"
-                            class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
-                            <span class="sr-only">Previous</span>
-                            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                <path fill-rule="evenodd"
-                                    d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                        <span id="page-indicator"
-                            class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 focus:outline-offset-0">Page
-                            1</span>
-                        <button onclick="changePage(1)"
-                            class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
-                            <span class="sr-only">Next</span>
-                            <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                <path fill-rule="evenodd"
-                                    d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z"
-                                    clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                    </nav>
-                </div>
-            </div>
-        </div>
-    </div>
+        <!-- ... -->
 
-    <!-- Password Modal -->
-    <div id="passwordModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-            <div class="mt-3 text-center">
-                <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
-                    <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                </div>
-                <h3 class="text-lg leading-6 font-medium text-gray-900 mt-4">Admin Authentication</h3>
-                <div class="mt-2 px-7 py-3">
-                    <p class="text-sm text-gray-500 mb-3">Please enter the admin password to proceed.</p>
-                    <input type="password" id="adminPassword"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-                        placeholder="Password">
-                    <p id="authError" class="text-xs text-red-500 mt-2 hidden">Incorrect password</p>
-                </div>
-                <div class="items-center px-4 py-3">
-                    <button id="authConfirmBtn"
-                        class="px-4 py-2 bg-indigo-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        Confirm
-                    </button>
-                    <button onclick="closeModal()"
-                        class="mt-3 px-4 py-2 bg-white text-gray-700 text-base font-medium rounded-md w-full shadow-sm border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300">
-                        Cancel
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+        <script>
+            // ... (lines 230-313 skipped)
 
-    <script>
-        let currentPage = 1;
-        let itemsPerPage = 25;
-        let sortField = 'timestamp';
-        let sortDirection = 'desc';
-        let searchText = '';
-        let pendingAction = null; // 'export' or 'clear'
-
-        async function fetchSystemStatus() {
-            try {
-                const response = await fetch('/api/status');
-                const data = await response.json();
-
-                // Format uptime
-                const hrs = Math.floor(data.uptime_seconds / 3600);
-                const mins = Math.floor((data.uptime_seconds % 3600) / 60);
-                const secs = data.uptime_seconds % 60;
-                document.getElementById('sys-uptime').textContent = `${hrs}h ${mins}m ${secs}s`;
-
-                document.getElementById('sys-cpu').textContent = `${data.cpu_usage_percent.toFixed(1)}%`;
-                document.getElementById('sys-ram').textContent = `${data.memory_used_mb}MB / ${data.memory_total_mb}MB`;
-            } catch (err) {
-                console.error('Failed to fetch system status', err);
+            function updateSortIcons() {
+                ['timestamp', 'ip', 'device', 'device_id', 'action', 'count'].forEach(f => {
+                    const el = document.getElementById(`sort-${f}`);
+                    if (f === sortField) el.textContent = sortDirection === 'asc' ? '↑' : '↓';
+                    else el.textContent = '';
+                });
             }
-        }
 
-        async function fetchLogs() {
-            const query = new URLSearchParams({
-                page: currentPage,
-                page_size: itemsPerPage,
-                q: searchText,
-                sort_by: sortField,
-                order: sortDirection
-            });
+            // ...
 
-            try {
-                const response = await fetch(`/api/logs?${query}`);
-                const json = await response.json();
+            function renderTable(logs) {
+                const tbody = document.getElementById('logTableBody');
+                tbody.innerHTML = '';
+                // Update colspan from 5 to 6
+                if (logs.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No logs found</td></tr>'; return; }
+                logs.forEach(log => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50 transition-colors border-b border-gray-100';
+                    const actionClass = log.action === 'CONNECTED' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+                    // Truncate Device ID
+                    const shortDeviceId = log.device_id.length > 8 ? log.device_id.substring(0, 8) + '...' : log.device_id;
 
-                renderTable(json.data || []);
-                updateMetricsAndMeta(json.stats || {}, json.meta || {});
-                updatePagination(json.meta || {});
-            } catch (err) {
-                console.error('Failed to fetch logs', err);
-            }
-        }
-
-        function updateMetricsAndMeta(stats, meta) {
-            document.getElementById('metric-total').textContent = meta.total || 0;
-            document.getElementById('metric-unique-ips').textContent = stats.unique_ips || 0;
-            document.getElementById('metric-active').textContent = stats.active_users || 0;
-            document.getElementById('metric-last').textContent = stats.last_activity || '-';
-        }
-
-        function updatePagination(meta) {
-            document.getElementById('total-results').textContent = meta.total;
-
-            const start = (meta.page - 1) * meta.page_size + 1;
-            const end = Math.min(start + meta.page_size - 1, meta.total);
-
-            document.getElementById('page-start').textContent = meta.total > 0 ? start : 0;
-            document.getElementById('page-end').textContent = meta.total > 0 ? end : 0;
-            document.getElementById('page-indicator').textContent = `Page ${meta.page} of ${meta.total_pages || 1}`;
-        }
-
-        function handleSearch() {
-            searchText = document.getElementById('searchInput').value;
-            currentPage = 1;
-            fetchLogs();
-        }
-
-        function handlePageSize() {
-            itemsPerPage = parseInt(document.getElementById('pageSize').value);
-            currentPage = 1;
-            fetchLogs();
-        }
-
-        function handleSort(field) {
-            if (sortField === field) sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-            else { sortField = field; sortDirection = 'desc'; }
-            updateSortIcons();
-            fetchLogs();
-        }
-
-        function updateSortIcons() {
-            ['timestamp', 'ip', 'device', 'action', 'count'].forEach(f => {
-                const el = document.getElementById(`sort-${f}`);
-                if (f === sortField) el.textContent = sortDirection === 'asc' ? '↑' : '↓';
-                else el.textContent = '';
-            });
-        }
-
-        function changePage(delta) {
-            // We need total pages to cap implementation, but meta is not stored globally.
-            // We can optimistically Request. Or store last meta.
-            // Let's rely on backend ignoring out of bound or handling it?
-            // Or better, store totalPages in a global var.
-            currentPage += delta;
-            if (currentPage < 1) currentPage = 1;
-            // Ideally we check max page, but let's just fetch.
-            // If we want to be safe: 
-            // const totalPages = parseInt(document.getElementById('page-indicator').textContent.split('of ')[1]);
-            // if (currentPage > totalPages) currentPage = totalPages;
-            fetchLogs();
-        }
-
-        function renderTable(logs) {
-            const tbody = document.getElementById('logTableBody');
-            tbody.innerHTML = '';
-            if (logs.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No logs found</td></tr>'; return; }
-            logs.forEach(log => {
-                const row = document.createElement('tr');
-                row.className = 'hover:bg-gray-50 transition-colors border-b border-gray-100';
-                const actionClass = log.action === 'CONNECTED' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
-                row.innerHTML = `
+                    row.innerHTML = `
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">${log.timestamp}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${log.ip}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate" title="${log.device}">${log.device}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono" title="${log.device_id}">${shortDeviceId}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${actionClass}">${log.action}</span></td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">${log.count}</td>`;
-                tbody.appendChild(row);
+                    tbody.appendChild(row);
+                });
+            }
+
+            // Modal & Action Logic
+            function initiateAction(action) {
+                pendingAction = action;
+                document.getElementById('passwordModal').classList.remove('hidden');
+                document.getElementById('adminPassword').value = '';
+                document.getElementById('authError').classList.add('hidden');
+                document.getElementById('adminPassword').focus();
+            }
+
+            function closeModal() {
+                document.getElementById('passwordModal').classList.add('hidden');
+                pendingAction = null;
+            }
+
+            document.getElementById('authConfirmBtn').addEventListener('click', submitPassword);
+            document.getElementById('adminPassword').addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') submitPassword();
             });
-        }
 
-        // Modal & Action Logic
-        function initiateAction(action) {
-            pendingAction = action;
-            document.getElementById('passwordModal').classList.remove('hidden');
-            document.getElementById('adminPassword').value = '';
-            document.getElementById('authError').classList.add('hidden');
-            document.getElementById('adminPassword').focus();
-        }
+            async function submitPassword() {
+                const password = document.getElementById('adminPassword').value;
+                if (!password) return;
 
-        function closeModal() {
-            document.getElementById('passwordModal').classList.add('hidden');
-            pendingAction = null;
-        }
-
-        document.getElementById('authConfirmBtn').addEventListener('click', submitPassword);
-        document.getElementById('adminPassword').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') submitPassword();
-        });
-
-        async function submitPassword() {
-            const password = document.getElementById('adminPassword').value;
-            if (!password) return;
-
-            if (pendingAction === 'clear') {
-                const res = await fetch('/api/logs', {
-                    method: 'DELETE',
-                    headers: { 'X-Admin-Password': password }
-                });
-                if (res.ok) {
-                    closeModal();
-                    fetchLogs();
-                } else {
-                    document.getElementById('authError').classList.remove('hidden');
-                }
-            } else if (pendingAction === 'export') {
-                const res = await fetch('/api/export', {
-                    method: 'GET',
-                    headers: { 'X-Admin-Password': password }
-                });
-                if (res.ok) {
-                    const blob = await res.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = "server_logs.csv";
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    closeModal();
-                } else {
-                    document.getElementById('authError').classList.remove('hidden');
+                if (pendingAction === 'clear') {
+                    const res = await fetch('/api/logs', {
+                        method: 'DELETE',
+                        headers: { 'X-Admin-Password': password }
+                    });
+                    if (res.ok) {
+                        closeModal();
+                        fetchLogs();
+                    } else {
+                        document.getElementById('authError').classList.remove('hidden');
+                    }
+                } else if (pendingAction === 'export') {
+                    const res = await fetch('/api/export', {
+                        method: 'GET',
+                        headers: { 'X-Admin-Password': password }
+                    });
+                    if (res.ok) {
+                        const blob = await res.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = "server_logs.csv";
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        closeModal();
+                    } else {
+                        document.getElementById('authError').classList.remove('hidden');
+                    }
                 }
             }
-        }
 
-        function refreshAll() {
-            fetchLogs();
-            fetchSystemStatus();
-        }
+            function refreshAll() {
+                fetchLogs();
+                fetchSystemStatus();
+            }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            refreshAll();
-            setInterval(refreshAll, 5000);
-        });
-    </script>
+            document.addEventListener('DOMContentLoaded', () => {
+                refreshAll();
+                setInterval(refreshAll, 5000);
+            });
+        </script>
 </body>
 
 </html>

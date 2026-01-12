@@ -35,14 +35,14 @@ impl FileLogger {
 }
 
 impl EventLogger for FileLogger {
-    fn log(&self, ip: &str, device: &str, action: &str, count: u32) {
+    fn log(&self, ip: &str, device: &str, device_id: &str, action: &str, count: u32) {
         if let Ok(mut file) = self.file.lock() {
             let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S %z");
             let short_device = Self::shorten_device(device);
             // Sanitize commas in device string
             let sanitized_device = short_device.replace(",", " ");
             
-            if let Err(e) = writeln!(file, "{},{},{},{},{}", timestamp, ip, sanitized_device, action, count) {
+            if let Err(e) = writeln!(file, "{},{},{},{},{},{}", timestamp, ip, sanitized_device, device_id, action, count) {
                 eprintln!("Failed to write to log: {}", e);
             }
         }

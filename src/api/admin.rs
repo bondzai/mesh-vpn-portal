@@ -63,6 +63,7 @@ pub struct LogEntry {
     pub timestamp: String,
     pub ip: String,
     pub device: String,
+    pub device_id: String,
     pub action: String,
     pub count: u32,
     pub raw: String,
@@ -105,15 +106,30 @@ pub async fn get_logs(Query(params): Query<LogQuery>) -> impl IntoResponse {
     let mut all_logs: Vec<LogEntry> = content.lines()
         .filter_map(|line| {
             let parts: Vec<&str> = line.split(',').collect();
-            if parts.len() < 5 { return None; }
-            Some(LogEntry {
-                timestamp: parts[0].to_string(),
-                ip: parts[1].to_string(),
-                device: parts[2].to_string(),
-                action: parts[3].to_string(),
-                count: parts[4].parse().unwrap_or(0),
-                raw: line.to_string(),
-            })
+            // Handle legacy (5 entries) and new (6 entries) formats
+            if parts.len() == 6 {
+                Some(LogEntry {
+                    timestamp: parts[0].to_string(),
+                    ip: parts[1].to_string(),
+                    device: parts[2].to_string(),
+                    device_id: parts[3].to_string(),
+                    action: parts[4].to_string(),
+                    count: parts[5].parse().unwrap_or(0),
+                    raw: line.to_string(),
+                })
+            } else if parts.len() == 5 { // Legacy fallback
+                Some(LogEntry {
+                    timestamp: parts[0].to_string(),
+                    ip: parts[1].to_string(),
+                    device: parts[2].to_string(),
+                    device_id: "N/A".to_string(),
+                    action: parts[3].to_string(),
+                    count: parts[4].parse().unwrap_or(0),
+                    raw: line.to_string(),
+                })
+            } else {
+                None
+            }
         })
         .collect();
 
