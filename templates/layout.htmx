@@ -28,6 +28,16 @@
                     <div class="flex-shrink-0 flex items-center">
                         <span class="text-xl font-bold text-gray-100 tracking-tight">Admin Dashboard</span>
                     </div>
+                    {% if !nav_items.is_empty() %}
+                    <div class="hidden sm:ml-8 sm:flex sm:items-center sm:space-x-8">
+                        {% for item in nav_items %}
+                        <a href="{{ item.href }}"
+                           class="inline-flex items-center px-1 pt-1 text-sm font-medium transition-colors duration-200 border-b-2 h-16 {% if item.active %}border-[#38bdf8] text-[#38bdf8]{% else %}border-transparent text-gray-400 hover:text-gray-200 hover:border-gray-600{% endif %}">
+                            {{ item.label }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                 </div>
                 <div class="flex items-center">
                     {% if !username.is_empty() %}

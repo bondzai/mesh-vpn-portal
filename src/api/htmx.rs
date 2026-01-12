@@ -6,7 +6,7 @@ use axum::{
 use askama::Template;
 use std::env;
 use crate::state::AppState;
-use crate::domain::{LogEntry, LogQuery};
+use crate::domain::{LogEntry, LogQuery, NavItem};
 use crate::services::log_service;
 
 // Wrapper struct for templates to implement IntoResponse
@@ -48,6 +48,8 @@ pub struct DashboardTemplate {
     pub q: String,
     pub sort_by: String,
     pub order: String,
+    
+    pub nav_items: Vec<NavItem>,
 }
 
 #[derive(Template)]
@@ -106,7 +108,20 @@ pub async fn dashboard_handler(
         q: params.q.unwrap_or_default(),
         sort_by: params.sort_by,
         order: params.order,
+        
+        nav_items: get_nav_menu("/admin"),
     })
+}
+
+fn get_nav_menu(current_path: &str) -> Vec<NavItem> {
+    vec![
+        NavItem {
+            label: "Overview".to_string(),
+            href: "/admin".to_string(),
+            active: current_path == "/admin",
+        },
+        // Future modules can be added here easily
+    ]
 }
 
 pub async fn stats_handler(

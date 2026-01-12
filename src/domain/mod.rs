@@ -11,6 +11,13 @@ pub struct UserStats {
 }
 
 #[derive(Debug, Serialize, Clone)]
+pub struct NavItem {
+    pub label: String,
+    pub href: String,
+    pub active: bool,
+}
+
+#[derive(Debug, Serialize, Clone)]
 pub struct LogEntry {
     pub timestamp: String,
     pub ip: String,
