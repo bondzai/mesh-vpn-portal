@@ -8,12 +8,12 @@
     <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">System Overview</h1>
-            <p class="mt-1 text-sm text-gray-500">Real-time metrics and event logs</p>
+            <h1 class="text-2xl font-bold text-[#c9d1d9]">System Overview</h1>
+            <p class="mt-1 text-sm text-[#8b949e]">Real-time metrics and event logs</p>
         </div>
         <div class="flex items-center gap-2">
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                <span class="w-2 h-2 mr-1 bg-green-400 rounded-full animate-pulse"></span>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[rgba(56,139,253,0.15)] text-[#58a6ff] border border-[rgba(56,139,253,0.4)]">
+                <span class="w-2 h-2 mr-1 bg-[#58a6ff] rounded-full animate-pulse"></span>
                 Live
             </span>
         </div>
@@ -25,20 +25,20 @@
     </div>
 
     <!-- Filters -->
-    <div class="bg-white px-4 py-5 shadow sm:rounded-lg sm:p-6">
+    <div class="bg-[#161b22] px-4 py-5 shadow-sm border border-[#30363d] sm:rounded-lg sm:p-6">
         <form hx-get="/htmx/logs" 
               hx-target="#logs-table" 
               hx-trigger="input delay:500ms from:input, change from:select"
               class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
             
             <div class="sm:col-span-3">
-                <label for="search" class="block text-sm font-medium text-gray-700">Search</label>
+                <label for="search" class="block text-sm font-medium text-[#c9d1d9]">Search</label>
                 <div class="mt-1 relative rounded-md shadow-sm">
                     <input type="text" 
                            name="q" 
                            id="search" 
                            value="{{ q }}"
-                           class="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" 
+                           class="focus:ring-[#1f6feb] focus:border-[#1f6feb] block w-full sm:text-sm border-[#30363d] rounded-md bg-[#0d1117] text-[#c9d1d9] placeholder-[#8b949e]" 
                            placeholder="Search logs...">
                 </div>
             </div>
@@ -49,12 +49,12 @@
                             hx-delete="/api/logs"
                             hx-confirm="Are you sure you want to clear all logs?"
                             hx-target="#logs-table"
-                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-[#f85149] bg-[rgba(248,81,73,0.1)] hover:bg-[rgba(248,81,73,0.2)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#f85149]">
                         Clear Logs
                     </button>
                     <a href="/api/export" 
                        target="_blank"
-                       class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                       class="inline-flex items-center px-4 py-2 border border-[#30363d] shadow-sm text-sm font-medium rounded-md text-[#c9d1d9] bg-[#21262d] hover:bg-[#30363d] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#58a6ff]">
                         Export CSV
                     </a>
                 </div>
