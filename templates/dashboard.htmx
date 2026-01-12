@@ -8,12 +8,12 @@
     <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-[#c9d1d9]">System Overview</h1>
-            <p class="mt-1 text-sm text-[#8b949e]">Real-time metrics and event logs</p>
+            <h1 class="text-2xl font-bold text-gray-100 tracking-tight">System Overview</h1>
+            <p class="mt-1 text-sm text-gray-400">Real-time metrics and event logs</p>
         </div>
         <div class="flex items-center gap-2">
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[rgba(56,139,253,0.15)] text-[#58a6ff] border border-[rgba(56,139,253,0.4)]">
-                <span class="w-2 h-2 mr-1 bg-[#58a6ff] rounded-full animate-pulse"></span>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#38bdf8]/10 text-[#38bdf8] border border-[#38bdf8]/20 backdrop-blur-sm">
+                <span class="w-2 h-2 mr-1 bg-[#38bdf8] rounded-full animate-pulse shadow-[0_0_10px_rgba(56,189,248,0.5)]"></span>
                 Live
             </span>
         </div>
@@ -25,20 +25,20 @@
     </div>
 
     <!-- Filters -->
-    <div class="bg-[#161b22] px-4 py-5 shadow-sm border border-[#30363d] sm:rounded-lg sm:p-6">
+    <div class="bg-black/20 backdrop-blur-md px-4 py-5 shadow-lg border border-white/5 sm:rounded-xl sm:p-6 transition-all duration-300 hover:border-white/10 ring-1 ring-white/5">
         <form hx-get="/htmx/logs" 
               hx-target="#logs-table" 
               hx-trigger="input delay:500ms from:input, change from:select"
               class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
             
             <div class="sm:col-span-3">
-                <label for="search" class="block text-sm font-medium text-[#c9d1d9]">Search</label>
-                <div class="mt-1 relative rounded-md shadow-sm">
+                <label for="search" class="block text-sm font-medium text-gray-300 mb-1">Search</label>
+                <div class="relative rounded-lg shadow-sm group">
                     <input type="text" 
                            name="q" 
                            id="search" 
                            value="{{ q }}"
-                           class="focus:ring-[#1f6feb] focus:border-[#1f6feb] block w-full sm:text-sm border-[#30363d] rounded-md bg-[#0d1117] text-[#c9d1d9] placeholder-[#8b949e]" 
+                           class="focus:ring-2 focus:ring-[#38bdf8]/50 focus:border-[#38bdf8] block w-full sm:text-sm border-white/10 rounded-lg bg-black/20 text-gray-200 placeholder-gray-500 py-2.5 transition-all duration-200 group-hover:border-white/20 group-hover:bg-black/30" 
                            placeholder="Search logs...">
                 </div>
             </div>
@@ -49,12 +49,12 @@
                             hx-delete="/api/logs"
                             hx-confirm="Are you sure you want to clear all logs?"
                             hx-target="#logs-table"
-                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-[#f85149] bg-[rgba(248,81,73,0.1)] hover:bg-[rgba(248,81,73,0.2)] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#f85149]">
+                            class="inline-flex items-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-[#f87171] bg-[#f87171]/10 hover:bg-[#f87171]/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#f87171] focus:ring-offset-[#27272a] transition-all duration-200 backdrop-blur-sm">
                         Clear Logs
                     </button>
                     <a href="/api/export" 
                        target="_blank"
-                       class="inline-flex items-center px-4 py-2 border border-[#30363d] shadow-sm text-sm font-medium rounded-md text-[#c9d1d9] bg-[#21262d] hover:bg-[#30363d] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#58a6ff]">
+                       class="inline-flex items-center px-4 py-2.5 border border-white/10 shadow-sm text-sm font-medium rounded-lg text-gray-200 bg-white/5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#38bdf8] focus:ring-offset-[#27272a] transition-all duration-200 backdrop-blur-sm">
                         Export CSV
                     </a>
                 </div>
