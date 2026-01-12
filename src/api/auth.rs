@@ -9,7 +9,7 @@ use std::env;
 use crate::api::htmx::HtmlTemplate;
 
 #[derive(Template)]
-#[template(path = "login.html")]
+#[template(path = "login.htmx", escape = "html")]
 pub struct LoginTemplate {
     pub error: Option<String>,
 }

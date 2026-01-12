@@ -1,0 +1,70 @@
+{% extends "layout.htmx" %}
+
+{% block head %}
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6" hx-ext="ws" ws-connect="/ws?device_id=admin-dashboard">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">System Overview</h1>
+            <p class="mt-1 text-sm text-gray-500">Real-time metrics and event logs</p>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                <span class="w-2 h-2 mr-1 bg-green-400 rounded-full animate-pulse"></span>
+                Live
+            </span>
+        </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div id="stats-grid">
+        {% include "components/stats.htmx" %}
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white px-4 py-5 shadow sm:rounded-lg sm:p-6">
+        <form hx-get="/htmx/logs" 
+              hx-target="#logs-table" 
+              hx-trigger="input delay:500ms from:input, change from:select"
+              class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+            
+            <div class="sm:col-span-3">
+                <label for="search" class="block text-sm font-medium text-gray-700">Search</label>
+                <div class="mt-1 relative rounded-md shadow-sm">
+                    <input type="text" 
+                           name="q" 
+                           id="search" 
+                           value="{{ q }}"
+                           class="focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md" 
+                           placeholder="Search logs...">
+                </div>
+            </div>
+
+            <div class="sm:col-span-3">
+                <div class="flex gap-4 items-end">
+                    <button type="button" 
+                            hx-delete="/api/logs"
+                            hx-confirm="Are you sure you want to clear all logs?"
+                            hx-target="#logs-table"
+                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
+                        Clear Logs
+                    </button>
+                    <a href="/api/export" 
+                       target="_blank"
+                       class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Export CSV
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Logs Table -->
+    <div id="logs-table">
+        {% include "components/table.htmx" %}
+    </div>
+</div>
+{% endblock %}

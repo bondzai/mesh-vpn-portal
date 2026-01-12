@@ -30,7 +30,7 @@ where
 
 // Templates
 #[derive(Template)]
-#[template(path = "dashboard.html")]
+#[template(path = "dashboard.htmx", escape = "html")]
 pub struct DashboardTemplate {
     pub username: String,
     pub total_events: usize,
@@ -51,7 +51,7 @@ pub struct DashboardTemplate {
 }
 
 #[derive(Template)]
-#[template(path = "components/stats.html")]
+#[template(path = "components/stats.htmx", escape = "html")]
 pub struct StatsTemplate {
     pub total_events: usize,
     pub unique_ips: usize,
@@ -62,7 +62,7 @@ pub struct StatsTemplate {
 }
 
 #[derive(Template)]
-#[template(path = "components/table.html")]
+#[template(path = "components/table.htmx", escape = "html")]
 pub struct TableTemplate {
     pub logs: Vec<LogEntry>,
     pub page: usize,
@@ -75,7 +75,7 @@ pub struct TableTemplate {
 }
 
 #[derive(Template)]
-#[template(path = "logged_out.html")]
+#[template(path = "logged_out.htmx", escape = "html")]
 pub struct LoggedOutTemplate;
 
 // Handlers
