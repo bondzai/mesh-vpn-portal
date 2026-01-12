@@ -6,9 +6,10 @@
                 <thead class="bg-white/5">
                     <tr>
                         {% for (key, label) in [("timestamp", "Timestamp"), ("ip", "IP Address"), ("device", "Device"),
-                        ("device_id", "Device ID"), ("action", "Action"), ("count", "Active Users")] %}
+                        ("device_id", "Device ID"), ("action", "Action"), ("count", "Active Users"), ("duration", "Duration")] %}
                         <th scope="col"
-                            class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer transition-colors hover:bg-white/5 hover:text-gray-200"
+                            style="width: 150px; min-width: 100px; position: relative;"
+                            class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer transition-colors hover:bg-white/5 hover:text-gray-200 select-none"
                             hx-get="/htmx/logs?sort_by={{key}}&order={% if sort_by == *key && order == "asc" %}desc{%
                             else %}asc{% endif %}&q={{q}}&page=1&page_size={{page_size}}"
                             hx-target="#log-table-container">
@@ -27,7 +28,7 @@
                 <tbody class="divide-y divide-white/5 relative">
                     {% if logs.is_empty() %}
                     <tr>
-                        <td colspan="6" class="px-6 py-12 text-center text-gray-400">
+                        <td colspan="7" class="px-6 py-12 text-center text-gray-400">
                             <div class="flex flex-col items-center gap-2">
                                 <svg class="w-8 h-8 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -54,6 +55,14 @@
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-200 font-bold">{{ log.count }}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400 font-mono text-xs">
+                            {% match log.duration %}
+                                {% when Some(duration) %}
+                                    <span class="bg-white/5 px-1.5 py-0.5 rounded border border-white/5">{{ duration }}</span>
+                                {% when None %}
+                                    -
+                            {% endmatch %}
+                        </td>
                     </tr>
                     {% endfor %}
                     {% endif %}
@@ -84,6 +93,20 @@
                         else %}{{ page * page_size }}{% endif %}</span> of <span class="font-medium text-gray-200">{{ total }}</span>
                     results
                 </p>
+            </div>
+            <div>
+                 <form class="flex items-center gap-2" hx-get="/htmx/logs" hx-target="#log-table-container" hx-trigger="change">
+                    <input type="hidden" name="q" value="{{ q }}">
+                    <input type="hidden" name="sort_by" value="{{ sort_by }}">
+                    <input type="hidden" name="order" value="{{ order }}">
+                    <label for="page_size" class="text-sm text-gray-400">Rows per page</label>
+                    <select name="page_size" id="page_size" class="bg-black/20 border border-white/10 text-gray-200 text-sm rounded-lg focus:ring-[#38bdf8] focus:border-[#38bdf8] block p-1.5">
+                        <option value="10" {% if page_size == 10 %}selected{% endif %}>10</option>
+                        <option value="25" {% if page_size == 25 %}selected{% endif %}>25</option>
+                        <option value="50" {% if page_size == 50 %}selected{% endif %}>50</option>
+                        <option value="100" {% if page_size == 100 %}selected{% endif %}>100</option>
+                    </select>
+                </form>
             </div>
             <div>
                 <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">

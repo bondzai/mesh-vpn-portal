@@ -60,13 +60,16 @@ impl LogRepository for FileLogRepository {
         // If we move logic here, this repo should probably handle the "append raw line" or "append structured".
         // Let's stick to the trait: append(&LogEntry).
         
-        writeln!(file, "{},{},{},{},{},{}", 
+        let duration_str = entry.duration.clone().unwrap_or_default();
+        
+        writeln!(file, "{},{},{},{},{},{},{}", 
             entry.timestamp, 
             entry.ip, 
             sanitized_device, 
             entry.device_id, 
             entry.action, 
-            entry.count
+            entry.count,
+            duration_str
         )?;
         
         Ok(())
@@ -85,7 +88,9 @@ impl LogRepository for FileLogRepository {
         let mut all_logs: Vec<LogEntry> = content.lines()
             .filter_map(|line| {
                 let parts: Vec<&str> = line.split(',').collect();
-                if parts.len() == 6 {
+                let len = parts.len();
+                if len >= 6 {
+                    let duration = if len >= 7 && !parts[6].is_empty() { Some(parts[6].to_string()) } else { None };
                     Some(LogEntry {
                         timestamp: parts[0].to_string(),
                         ip: parts[1].to_string(),
@@ -93,9 +98,10 @@ impl LogRepository for FileLogRepository {
                         device_id: parts[3].to_string(),
                         action: parts[4].to_string(),
                         count: parts[5].parse().unwrap_or(0),
+                        duration,
                         raw: line.to_string(),
                     })
-                } else if parts.len() == 5 {
+                } else if len == 5 {
                     Some(LogEntry {
                         timestamp: parts[0].to_string(),
                         ip: parts[1].to_string(),
@@ -103,6 +109,7 @@ impl LogRepository for FileLogRepository {
                         device_id: "N/A".to_string(),
                         action: parts[3].to_string(),
                         count: parts[4].parse().unwrap_or(0),
+                        duration: None,
                         raw: line.to_string(),
                     })
                 } else {

@@ -26,6 +26,8 @@ pub struct LogEntry {
     pub device_id: String,
     pub action: String,
     pub count: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub duration: Option<String>,
     pub raw: String,
 }
 

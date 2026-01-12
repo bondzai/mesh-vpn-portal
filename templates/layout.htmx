@@ -66,7 +66,76 @@
         </div>
     </main>
 
-    {% block scripts %}{% endblock %}
+    {% block scripts %}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const createResizableTable = function(table) {
+                const cols = table.querySelectorAll('th');
+                [].forEach.call(cols, function(col) {
+                    // Add a resizer element to the column
+                    const resizer = document.createElement('div');
+                    resizer.style.position = 'absolute';
+                    resizer.style.top = '0';
+                    resizer.style.right = '0';
+                    resizer.style.width = '5px';
+                    resizer.style.cursor = 'col-resize';
+                    resizer.style.userSelect = 'none';
+                    resizer.style.height = '100%';
+                    resizer.classList.add('resizer'); // Add class for potential CSS styling
+                    resizer.addEventListener('mouseover', () => resizer.style.backgroundColor = 'rgba(56, 189, 248, 0.5)');
+                    resizer.addEventListener('mouseout', () => resizer.style.backgroundColor = 'transparent');
+                    col.appendChild(resizer);
+
+                    createResizableColumn(col, resizer);
+                });
+            };
+
+            const createResizableColumn = function(col, resizer) {
+                let x = 0;
+                let w = 0;
+
+                const mouseDownHandler = function(e) {
+                    x = e.clientX;
+                    const styles = window.getComputedStyle(col);
+                    w = parseInt(styles.width, 10);
+
+                    document.addEventListener('mousemove', mouseMoveHandler);
+                    document.addEventListener('mouseup', mouseUpHandler);
+                    resizer.classList.add('resizing');
+                    resizer.style.backgroundColor = 'rgba(56, 189, 248, 0.8)'; // Highlight active
+                };
+
+                const mouseMoveHandler = function(e) {
+                    const dx = e.clientX - x;
+                    col.style.width = `${w + dx}px`;
+                };
+
+                const mouseUpHandler = function() {
+                    document.removeEventListener('mousemove', mouseMoveHandler);
+                    document.removeEventListener('mouseup', mouseUpHandler);
+                    resizer.classList.remove('resizing');
+                    resizer.style.backgroundColor = 'transparent';
+                };
+
+                resizer.addEventListener('mousedown', mouseDownHandler);
+            };
+
+            // Initialize on load
+            const tables = document.getElementsByTagName('table');
+            [].forEach.call(tables, function(table) {
+                createResizableTable(table);
+            });
+            
+            // Re-initialize after HTMX swaps
+            document.body.addEventListener('htmx:afterSwap', function(evt) {
+                const tables = evt.detail.elt.getElementsByTagName('table');
+                 [].forEach.call(tables, function(table) {
+                    createResizableTable(table);
+                });
+            });
+        });
+    </script>
+    {% endblock %}
 </body>
 
 </html>

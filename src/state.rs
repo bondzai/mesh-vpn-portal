@@ -18,6 +18,7 @@ pub struct AppState {
     pub log_repository: Arc<dyn LogRepository>,
     pub system: Arc<Mutex<System>>,
     pub start_time: Instant,
+    pub connection_start_times: Arc<Mutex<HashMap<String, Instant>>>,
     pub key: Key,
 }
 
@@ -35,6 +36,7 @@ impl AppState {
             log_repository,
             system: Arc::new(Mutex::new(sys)),
             start_time: Instant::now(),
+            connection_start_times: Arc::new(Mutex::new(HashMap::new())),
             key: Key::generate(),
         }
     }
@@ -44,7 +46,12 @@ impl AppState {
         let count = conn_map.len() as u32;
         drop(conn_map); // Unlock before logging/sending to avoid blocking
 
-        self.logger.log(ip, device, device_id, "CONNECTED", count);
+        if count == 1 {
+            let mut start_times = self.connection_start_times.lock().unwrap();
+            start_times.insert(device_id.to_string(), Instant::now());
+        }
+
+        self.logger.log(ip, device, device_id, "CONNECTED", count, None);
         let _ = self.tx.send(UserStats { active_users: count, total_users: count });
         count
     }
@@ -60,7 +67,24 @@ impl AppState {
         let count = conn_map.len() as u32;
         drop(conn_map);
 
-        self.logger.log(ip, device, device_id, "DISCONNECTED", count);
+        let mut duration_str = None;
+        if count == 0 {
+             let mut start_times = self.connection_start_times.lock().unwrap();
+             if let Some(start) = start_times.remove(device_id) {
+                 let duration = start.elapsed();
+                 let secs = duration.as_secs();
+                 let formatted = if secs < 60 {
+                     format!("{}s", secs)
+                 } else if secs < 3600 {
+                     format!("{}m {}s", secs / 60, secs % 60)
+                 } else {
+                     format!("{}h {}m", secs / 3600, (secs % 3600) / 60)
+                 };
+                 duration_str = Some(formatted);
+             }
+        }
+
+        self.logger.log(ip, device, device_id, "DISCONNECTED", count, duration_str);
         let _ = self.tx.send(UserStats { active_users: count, total_users: count });
         count
     }
