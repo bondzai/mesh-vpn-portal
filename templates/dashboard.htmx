@@ -4,67 +4,66 @@
 {% endblock %}
 
 {% block content %}
-<div class="space-y-6" hx-ext="ws" ws-connect="/ws?device_id=admin-dashboard">
+<div class="space-y-6">
     <!-- Header -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-gray-100 tracking-tight">System Overview</h1>
-            <p class="mt-1 text-sm text-gray-400">Real-time metrics and event logs</p>
+            <h1 class="text-2xl font-bold text-gray-100 tracking-tight">System Dashboard</h1>
+            <p class="mt-1 text-sm text-gray-400">Manage your server and view logs</p>
         </div>
         <div class="flex items-center gap-2">
             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#38bdf8]/10 text-[#38bdf8] border border-[#38bdf8]/20 backdrop-blur-sm">
                 <span class="w-2 h-2 mr-1 bg-[#38bdf8] rounded-full animate-pulse shadow-[0_0_10px_rgba(56,189,248,0.5)]"></span>
-                Live
+                System Online
             </span>
         </div>
     </div>
 
-    <!-- Stats Grid -->
-    <div id="stats-grid">
-        {% include "components/stats.htmx" %}
+    <!-- Tabs -->
+    <div class="border-b border-white/10">
+        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+            <button hx-get="/htmx/overview" 
+                    hx-target="#tab-content"
+                    onclick="switchTab(this)"
+                    class="tab-btn group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm border-[#38bdf8] text-[#38bdf8]">
+                <svg class="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Overview
+            </button>
+
+            <button hx-get="/htmx/logs-tab" 
+                    hx-target="#tab-content"
+                    onclick="switchTab(this)"
+                    class="tab-btn group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-300">
+                <svg class="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                Logs
+            </button>
+        </nav>
     </div>
 
-    <!-- Filters -->
-    <div class="bg-black/20 backdrop-blur-md px-4 py-5 shadow-lg border border-white/5 sm:rounded-xl sm:p-6 transition-all duration-300 hover:border-white/10 ring-1 ring-white/5">
-        <form hx-get="/htmx/logs" 
-              hx-target="#logs-table" 
-              hx-trigger="input delay:500ms from:input, change from:select"
-              class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-            
-            <div class="sm:col-span-3">
-                <label for="search" class="block text-sm font-medium text-gray-300 mb-1">Search</label>
-                <div class="relative rounded-lg shadow-sm group">
-                    <input type="text" 
-                           name="q" 
-                           id="search" 
-                           value="{{ q }}"
-                           class="focus:ring-2 focus:ring-[#38bdf8]/50 focus:border-[#38bdf8] block w-full sm:text-sm border-white/10 rounded-lg bg-black/20 text-gray-200 placeholder-gray-500 py-2.5 transition-all duration-200 group-hover:border-white/20 group-hover:bg-black/30" 
-                           placeholder="Search logs...">
-                </div>
-            </div>
-
-            <div class="sm:col-span-3">
-                <div class="flex gap-4 items-end">
-                    <button type="button" 
-                            hx-delete="/api/logs"
-                            hx-confirm="Are you sure you want to clear all logs?"
-                            hx-target="#logs-table"
-                            class="inline-flex items-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-[#f87171] bg-[#f87171]/10 hover:bg-[#f87171]/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#f87171] focus:ring-offset-[#27272a] transition-all duration-200 backdrop-blur-sm">
-                        Clear Logs
-                    </button>
-                    <a href="/api/export" 
-                       target="_blank"
-                       class="inline-flex items-center px-4 py-2.5 border border-white/10 shadow-sm text-sm font-medium rounded-lg text-gray-200 bg-white/5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#38bdf8] focus:ring-offset-[#27272a] transition-all duration-200 backdrop-blur-sm">
-                        Export CSV
-                    </a>
-                </div>
-            </div>
-        </form>
-    </div>
-
-    <!-- Logs Table -->
-    <div id="logs-table">
-        {% include "components/table.htmx" %}
+    <!-- Tab Content -->
+    <div id="tab-content">
+        {% include "components/overview.htmx" %}
     </div>
 </div>
+
+<script>
+    function switchTab(clickedBtn) {
+        const inactiveClasses = ['border-transparent', 'text-gray-400', 'hover:text-gray-300', 'hover:border-gray-300'];
+        const activeClasses = ['border-[#38bdf8]', 'text-[#38bdf8]'];
+
+        // Reset all tabs to inactive state
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove(...activeClasses);
+            btn.classList.add(...inactiveClasses);
+        });
+        
+        // Set clicked tab to active state
+        clickedBtn.classList.remove(...inactiveClasses);
+        clickedBtn.classList.add(...activeClasses);
+    }
+</script>
 {% endblock %}

@@ -1,0 +1,44 @@
+<div class="space-y-6">
+    <!-- Filters -->
+    <div class="bg-black/20 backdrop-blur-md px-4 py-5 shadow-lg border border-white/5 sm:rounded-xl sm:p-6 transition-all duration-300 hover:border-white/10 ring-1 ring-white/5">
+        <form hx-get="/htmx/logs" 
+              hx-target="#logs-table-wrapper" 
+              hx-trigger="input delay:500ms from:input, change from:select"
+              class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+            
+            <div class="sm:col-span-3">
+                <label for="search" class="block text-sm font-medium text-gray-300 mb-1">Search</label>
+                <div class="relative rounded-lg shadow-sm group">
+                    <input type="text" 
+                           name="q" 
+                           id="search" 
+                           value="{{ q }}"
+                           class="focus:ring-2 focus:ring-[#38bdf8]/50 focus:border-[#38bdf8] block w-full sm:text-sm border-white/10 rounded-lg bg-black/20 text-gray-200 placeholder-gray-500 py-2.5 transition-all duration-200 group-hover:border-white/20 group-hover:bg-black/30" 
+                           placeholder="Search logs...">
+                </div>
+            </div>
+
+            <div class="sm:col-span-3">
+                <div class="flex gap-4 items-end">
+                    <button type="button" 
+                            hx-delete="/api/logs"
+                            hx-confirm="Are you sure you want to clear all logs?"
+                            hx-target="#logs-table-wrapper"
+                            class="inline-flex items-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-[#f87171] bg-[#f87171]/10 hover:bg-[#f87171]/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#f87171] focus:ring-offset-[#27272a] transition-all duration-200 backdrop-blur-sm">
+                        Clear Logs
+                    </button>
+                    <a href="/api/export" 
+                       target="_blank"
+                       class="inline-flex items-center px-4 py-2.5 border border-white/10 shadow-sm text-sm font-medium rounded-lg text-gray-200 bg-white/5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#38bdf8] focus:ring-offset-[#27272a] transition-all duration-200 backdrop-blur-sm">
+                        Export CSV
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Logs Table -->
+    <div id="logs-table-wrapper">
+        {% include "components/table.htmx" %}
+    </div>
+</div>

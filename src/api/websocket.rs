@@ -5,7 +5,6 @@ use axum::{
 };
 use std::collections::HashMap;
 use std::net::SocketAddr;
-use std::sync::Arc;
 use crate::state::AppState;
 
 pub async fn ws_handler(
@@ -49,11 +48,8 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, ip: String, devic
     let mut rx = state.tx.subscribe();
 
     // 3. Send initial state immediately
-    let initial_count = state.get_active_count();
-    let initial_msg = serde_json::to_string(&crate::domain::UserStats {
-        active_users: initial_count,
-        total_users: initial_count,
-    }).unwrap();
+    let stats = state.get_dashboard_stats();
+    let initial_msg = serde_json::to_string(&stats).unwrap();
     
     if socket.send(Message::Text(initial_msg.into())).await.is_err() {
         state.leave(&ip, &device, &device_id);
@@ -65,7 +61,7 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, ip: String, devic
         tokio::select! {
             // Receive update from channel
             Ok(msg) = rx.recv() => {
-                let json = serde_json::to_string(&msg).unwrap(); // msg is UserStats, so this produces {"activeUsers":...}
+                let json = serde_json::to_string(&msg).unwrap();
                 if socket.send(Message::Text(json.into())).await.is_err() {
                     break;
                 }

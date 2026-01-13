@@ -39,17 +39,32 @@ pub struct DashboardTemplate {
     pub uptime: String,
     pub cpu: String,
     pub ram: String,
-    
+    pub nav_items: Vec<NavItem>,
+}
+
+#[derive(Template)]
+#[template(path = "components/overview.htmx", escape = "html")]
+pub struct OverviewTemplate {
+    pub active_users: u32,
+    pub total_events: usize,
+    pub unique_ips: usize,
+    pub unique_device_ids: usize,
+    pub uptime: String,
+    pub cpu: String,
+    pub ram: String,
+}
+
+#[derive(Template)]
+#[template(path = "components/logs.htmx", escape = "html")]
+pub struct LogsTemplate {
+    pub q: String,
     pub logs: Vec<LogEntry>,
     pub page: usize,
     pub page_size: usize,
     pub total: usize,
     pub total_pages: usize,
-    pub q: String,
     pub sort_by: String,
     pub order: String,
-    
-    pub nav_items: Vec<NavItem>,
 }
 
 #[derive(Template)]
@@ -85,9 +100,17 @@ pub struct LoggedOutTemplate;
 
 pub async fn dashboard_handler(
     State(state): State<AppState>,
-    Query(params): Query<LogQuery>,
 ) -> impl IntoResponse {
-    let (logs, meta, stats) = state.log_repository.find_all(&params);
+    // Only need stats for initial overview load
+    let params = LogQuery {
+        page: 1,
+        page_size: 1,
+        q: None,
+        sort_by: "timestamp".to_string(),
+        order: "desc".to_string(),
+    };
+    
+    let (_, meta, stats) = state.log_repository.find_all(&params);
     let (uptime, cpu, ram) = get_system_metrics(&state);
 
     let username = env::var("ADMIN_USERNAME").unwrap_or_else(|_| "admin".to_string());
@@ -101,16 +124,6 @@ pub async fn dashboard_handler(
         uptime,
         cpu,
         ram,
-        
-        logs,
-        page: meta.page,
-        page_size: meta.page_size,
-        total: meta.total,
-        total_pages: meta.total_pages,
-        q: params.q.unwrap_or_default(),
-        sort_by: params.sort_by,
-        order: params.order,
-        
         nav_items: get_nav_menu("/admin"),
     })
 }
@@ -126,7 +139,7 @@ fn get_nav_menu(current_path: &str) -> Vec<NavItem> {
     ]
 }
 
-pub async fn stats_handler(
+pub async fn overview_tab_handler(
     State(state): State<AppState>,
 ) -> impl IntoResponse {
     let params = LogQuery {
@@ -140,14 +153,32 @@ pub async fn stats_handler(
     let (_, meta, stats) = state.log_repository.find_all(&params);
     let (uptime, cpu, ram) = get_system_metrics(&state);
 
-    HtmlTemplate(StatsTemplate {
+    HtmlTemplate(OverviewTemplate {
+        active_users: stats.active_users,
         total_events: meta.total,
         unique_ips: stats.unique_ips,
         unique_device_ids: stats.unique_device_ids,
-        active_users: stats.active_users,
         uptime,
         cpu,
         ram,
+    })
+}
+
+pub async fn logs_tab_handler(
+    State(state): State<AppState>,
+    Query(params): Query<LogQuery>,
+) -> impl IntoResponse {
+    let (logs, meta, _) = state.log_repository.find_all(&params);
+
+    HtmlTemplate(LogsTemplate {
+        q: params.q.unwrap_or_default(),
+        logs,
+        page: meta.page,
+        page_size: meta.page_size,
+        total: meta.total,
+        total_pages: meta.total_pages,
+        sort_by: params.sort_by,
+        order: params.order,
     })
 }
 

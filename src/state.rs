@@ -5,7 +5,7 @@ use tokio::sync::broadcast;
 use sysinfo::System; // Ensure trait is imported for refresh methods
 use std::time::Instant;
 
-use crate::domain::UserStats;
+use crate::domain::DashboardStats;
 use std::collections::HashMap;
 use axum_extra::extract::cookie::Key;
 use axum::extract::FromRef;
@@ -13,7 +13,7 @@ use axum::extract::FromRef;
 #[derive(Clone)]
 pub struct AppState {
     pub active_connections: Arc<Mutex<HashMap<String, u32>>>,
-    pub tx: broadcast::Sender<UserStats>, // Changed from String
+    pub tx: broadcast::Sender<DashboardStats>, 
     pub logger: Arc<dyn EventLogger + Send + Sync>,
     pub log_repository: Arc<dyn LogRepository>,
     pub system: Arc<Mutex<System>>,
@@ -52,7 +52,7 @@ impl AppState {
         }
 
         self.logger.log(ip, device, device_id, "CONNECTED", count, None);
-        let _ = self.tx.send(UserStats { active_users: count, total_users: count });
+        // Stats broadcast is handled by the background loop
         count
     }
 
@@ -85,13 +85,40 @@ impl AppState {
         }
 
         self.logger.log(ip, device, device_id, "DISCONNECTED", count, duration_str);
-        let _ = self.tx.send(UserStats { active_users: count, total_users: count });
+        // Stats broadcast is handled by the background loop
         count
     }
     
     // Helper to get current count without modifying state
     pub fn get_active_count(&self) -> u32 {
         self.active_connections.lock().unwrap().len() as u32
+    }
+
+    pub fn get_dashboard_stats(&self) -> crate::domain::DashboardStats {
+        let mut sys = self.system.lock().unwrap();
+        sys.refresh_cpu_all();
+        sys.refresh_memory();
+
+        let uptime_sec = self.start_time.elapsed().as_secs();
+        let hrs = uptime_sec / 3600;
+        let mins = (uptime_sec % 3600) / 60;
+        let secs = uptime_sec % 60;
+        let uptime = format!("{}h {}m {}s", hrs, mins, secs);
+
+        let cpu = format!("{:.1}", sys.global_cpu_usage());
+        let ram = format!("{}MB / {}MB", sys.used_memory() / 1024 / 1024, sys.total_memory() / 1024 / 1024);
+        
+        // Active users
+        let active_users = self.active_connections.lock().unwrap().len() as u32;
+
+        crate::domain::DashboardStats {
+            active_users,
+            total_users: active_users, // For now total = active in this context, or maybe total since boot? 
+                                     // The original UserStats had total_users=count too.
+            uptime,
+            cpu,
+            ram,
+        }
     }
 }
 

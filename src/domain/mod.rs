@@ -4,6 +4,17 @@ pub mod logger;
 pub mod repositories;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DashboardStats {
+    #[serde(rename = "activeUsers")]
+    pub active_users: u32,
+    #[serde(rename = "totalUsers")]
+    pub total_users: u32,
+    pub uptime: String,
+    pub cpu: String,
+    pub ram: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserStats {
     #[serde(rename = "activeUsers")]
     pub active_users: u32,

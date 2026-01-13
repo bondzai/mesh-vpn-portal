@@ -27,6 +27,17 @@ async fn main() {
     let logger = Arc::new(FileLogger::new("server.log"));
     let log_repo = Arc::new(FileLogRepository::new("server.log"));
     let app_state = AppState::new(logger, log_repo);
+    
+    // Spawn background task to broadcast system stats
+    let app_state_for_task = app_state.clone();
+    tokio::spawn(async move {
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(2));
+        loop {
+            interval.tick().await;
+            let stats = app_state_for_task.get_dashboard_stats();
+            let _ = app_state_for_task.tx.send(stats);
+        }
+    });
 
     let app = Router::new()
         .route("/health", get(api::health::health_check))
@@ -36,8 +47,9 @@ async fn main() {
         .merge(
             Router::new()
                 .route("/admin", get(api::htmx::dashboard_handler))
-                .route("/htmx/stats", get(api::htmx::stats_handler))
-                .route("/htmx/logs", get(api::htmx::logs_handler))
+                .route("/htmx/overview", get(api::htmx::overview_tab_handler))
+                .route("/htmx/logs-tab", get(api::htmx::logs_tab_handler))
+                .route("/htmx/logs", get(api::htmx::logs_handler)) // Keep for table pagination
                 .route("/api/logs", get(api::admin::get_logs).delete(api::admin::clear_logs))
                 .route("/api/export", get(api::admin::download_logs))
                 .route("/api/status", get(api::admin::get_system_status))
