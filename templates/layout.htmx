@@ -77,11 +77,12 @@
                     resizer.style.position = 'absolute';
                     resizer.style.top = '0';
                     resizer.style.right = '0';
-                    resizer.style.width = '5px';
+                    resizer.style.width = '8px'; // Wider touch target
                     resizer.style.cursor = 'col-resize';
                     resizer.style.userSelect = 'none';
                     resizer.style.height = '100%';
-                    resizer.classList.add('resizer'); // Add class for potential CSS styling
+                    resizer.style.zIndex = '10'; // Ensure it's on top
+                    resizer.classList.add('resizer'); 
                     resizer.addEventListener('mouseover', () => resizer.style.backgroundColor = 'rgba(56, 189, 248, 0.5)');
                     resizer.addEventListener('mouseout', () => resizer.style.backgroundColor = 'transparent');
                     col.appendChild(resizer);
@@ -95,6 +96,7 @@
                 let w = 0;
 
                 const mouseDownHandler = function(e) {
+                    e.preventDefault(); // Prevent text selection
                     x = e.clientX;
                     const styles = window.getComputedStyle(col);
                     w = parseInt(styles.width, 10);
@@ -102,7 +104,9 @@
                     document.addEventListener('mousemove', mouseMoveHandler);
                     document.addEventListener('mouseup', mouseUpHandler);
                     resizer.classList.add('resizing');
-                    resizer.style.backgroundColor = 'rgba(56, 189, 248, 0.8)'; // Highlight active
+                    resizer.style.backgroundColor = '#38bdf8'; // Highlight active
+                    document.body.style.cursor = 'col-resize'; // enforce cursor on body
+                    document.body.style.userSelect = 'none'; // prevent selection
                 };
 
                 const mouseMoveHandler = function(e) {
@@ -115,6 +119,8 @@
                     document.removeEventListener('mouseup', mouseUpHandler);
                     resizer.classList.remove('resizing');
                     resizer.style.backgroundColor = 'transparent';
+                    document.body.style.cursor = 'default';
+                    document.body.style.removeProperty('user-select');
                 };
 
                 resizer.addEventListener('mousedown', mouseDownHandler);
