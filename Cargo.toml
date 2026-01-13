@@ -2,6 +2,7 @@
 name = "counter"
 version = "0.1.0"
 edition = "2024"
+default-run = "counter"
 
 [dependencies]
 askama = "0.15"
