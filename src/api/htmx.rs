@@ -6,7 +6,7 @@ use axum::{
 use askama::Template;
 use std::env;
 use crate::state::AppState;
-use crate::domain::{LogEntry, LogQuery, NavItem};
+use crate::domain::{LogEntry, LogQuery, NavItem, ActiveSessionView};
 
 // Wrapper struct for templates to implement IntoResponse
 pub struct HtmlTemplate<T>(pub T);
@@ -162,6 +162,19 @@ pub async fn overview_tab_handler(
         cpu,
         ram,
     })
+}
+
+#[derive(Template)]
+#[template(path = "components/active_sessions.htmx", escape = "html")]
+pub struct ActiveSessionsTemplate {
+    pub sessions: Vec<ActiveSessionView>,
+}
+
+pub async fn active_sessions_tab_handler(
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    let sessions = state.get_active_sessions();
+    HtmlTemplate(ActiveSessionsTemplate { sessions })
 }
 
 pub async fn logs_tab_handler(

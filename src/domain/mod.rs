@@ -22,6 +22,23 @@ pub struct UserStats {
     pub total_users: u32,
 }
 
+#[derive(Debug, Clone)]
+pub struct ActiveSession {
+    pub device_id: String,
+    pub ip: String,
+    pub device: String,
+    pub connected_at: std::time::Instant,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ActiveSessionView {
+    pub device_id: String,
+    pub ip: String,
+    pub device: String,
+    pub connected_at: String,
+    pub duration: String,
+}
+
 #[derive(Debug, Serialize, Clone)]
 pub struct NavItem {
     pub label: String,

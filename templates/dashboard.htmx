@@ -22,7 +22,8 @@
     <!-- Tabs -->
     <div class="border-b border-white/10">
         <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-            <button hx-get="/htmx/overview" 
+            <button id="tab-overview"
+                    hx-get="/htmx/overview" 
                     hx-target="#tab-content"
                     onclick="switchTab(this)"
                     class="tab-btn group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm border-[#38bdf8] text-[#38bdf8]">
@@ -32,7 +33,19 @@
                 Overview
             </button>
 
-            <button hx-get="/htmx/logs-tab" 
+            <button id="tab-active-sessions"
+                    hx-get="/htmx/active-sessions-tab" 
+                    hx-target="#tab-content"
+                    onclick="switchTab(this)"
+                    class="tab-btn group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-300">
+                <svg class="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                Active Users
+            </button>
+
+            <button id="tab-logs"
+                    hx-get="/htmx/logs-tab" 
                     hx-target="#tab-content"
                     onclick="switchTab(this)"
                     class="tab-btn group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-300">
