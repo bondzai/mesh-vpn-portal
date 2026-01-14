@@ -37,10 +37,17 @@ pub async fn ws_handler(
         })
         .unwrap_or_else(|| addr.ip().to_string());
         
-    ws.on_upgrade(move |socket| handle_socket(socket, state, ip, user_agent, device_id))
+    ws.on_upgrade(move |socket| handle_socket(socket, state, ip, user_agent, device_id, params.get("stream").cloned()))
 }
 
-async fn handle_socket(mut socket: WebSocket, state: AppState, ip: String, device: String, device_id: String) {
+async fn handle_socket(
+    mut socket: WebSocket, 
+    state: AppState, 
+    ip: String, 
+    device: String, 
+    device_id: String,
+    stream: Option<String>
+) {
     // 1. Client connected: increment count and notify everyone
     state.join(&ip, &device, &device_id);
 
@@ -49,7 +56,25 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, ip: String, devic
 
     // 3. Send initial state immediately
     let stats = state.get_dashboard_stats();
-    let initial_msg = serde_json::to_string(&stats).unwrap();
+    
+    // Filter initial stats based on stream
+    let filtered_stats = match stream.as_deref() {
+        Some("metrics") => {
+            let mut s = stats.clone();
+            s.active_users = 0; // Hide user count in metrics stream
+            s
+        },
+        Some("users") => {
+            let mut s = stats.clone();
+            s.cpu = "0".to_string();
+            s.ram = "0".to_string();
+            s.uptime = "0".to_string();
+            s
+        },
+        _ => stats,
+    };
+
+    let initial_msg = serde_json::to_string(&filtered_stats).unwrap();
     
     if socket.send(Message::Text(initial_msg.into())).await.is_err() {
         state.leave(&ip, &device, &device_id);
@@ -61,9 +86,18 @@ async fn handle_socket(mut socket: WebSocket, state: AppState, ip: String, devic
         tokio::select! {
             // Receive update from channel
             Ok(msg) = rx.recv() => {
-                let json = serde_json::to_string(&msg).unwrap();
-                if socket.send(Message::Text(json.into())).await.is_err() {
-                    break;
+                // Filter outgoing updates based on stream
+                let should_send = match stream.as_deref() {
+                    Some("metrics") => true, // Send all (frontend will ignore user count if needed)
+                    Some("users") => true,   // Send all (frontend will ignore metrics if needed)
+                    _ => true,
+                };
+
+                if should_send {
+                    let json = serde_json::to_string(&msg).unwrap();
+                    if socket.send(Message::Text(json.into())).await.is_err() {
+                        break;
+                    }
                 }
             }
             // Receive message from client (ignore or handle close)

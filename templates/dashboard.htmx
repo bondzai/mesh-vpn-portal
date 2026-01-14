@@ -1,6 +1,23 @@
 {% extends "layout.htmx" %}
 
 {% block head %}
+<style>
+    .tab-btn {
+        transition: all 0.2s;
+    }
+    .tab-btn.active {
+        border-color: #38bdf8 !important;
+        color: #38bdf8 !important;
+    }
+    .tab-btn:not(.active) {
+        border-color: transparent !important;
+        color: #9ca3af !important;
+    }
+    .tab-btn:not(.active):hover {
+        color: #d1d5db !important;
+        border-color: #4b5563 !important;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -22,32 +39,37 @@
     <!-- Tabs -->
     <div class="border-b border-white/10">
         <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-            <button hx-get="/htmx/overview" 
+            <button id="tab-overview"
+                    hx-get="/htmx/overview" 
                     hx-target="#tab-content"
-                    class="tab-btn group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm border-[#38bdf8] text-[#38bdf8]"
-                    _="on click 
-                       remove .border-[#38bdf8] .text-[#38bdf8] from .tab-btn 
-                       add .border-transparent .text-gray-400 .hover:text-gray-300 .hover:border-gray-300 to .tab-btn 
-                       remove .border-transparent .text-gray-400 .hover:text-gray-300 .hover:border-gray-300 from me 
-                       add .border-[#38bdf8] .text-[#38bdf8] to me">
+                    onclick="setActiveTab('tab-overview')"
+                    class="tab-btn active group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm">
                 <svg class="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
                 Overview
             </button>
 
-            <button hx-get="/htmx/logs-tab" 
+            <button id="tab-logs"
+                    hx-get="/htmx/logs-tab" 
                     hx-target="#tab-content"
-                    class="tab-btn group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-300"
-                    _="on click 
-                       remove .border-[#38bdf8] .text-[#38bdf8] from .tab-btn 
-                       add .border-transparent .text-gray-400 .hover:text-gray-300 .hover:border-gray-300 to .tab-btn 
-                       remove .border-transparent .text-gray-400 .hover:text-gray-300 .hover:border-gray-300 from me 
-                       add .border-[#38bdf8] .text-[#38bdf8] to me">
+                    onclick="setActiveTab('tab-logs')"
+                    class="tab-btn group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm">
                 <svg class="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
                 Logs
+            </button>
+
+            <button id="tab-active-users"
+                    hx-get="/htmx/active-users" 
+                    hx-target="#tab-content"
+                    onclick="setActiveTab('tab-active-users')"
+                    class="tab-btn group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm">
+                <svg class="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Active Users
             </button>
         </nav>
     </div>
@@ -58,5 +80,102 @@
     </div>
 </div>
 
-<script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
+<script>
+let metricsSocket = null;
+let usersSocket = null;
+
+function setActiveTab(activeId) {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    const activeBtn = document.getElementById(activeId);
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+    }
+}
+
+// --- Metrics WebSocket ---
+function toggleMetricsWS() {
+    if (metricsSocket && metricsSocket.readyState === WebSocket.OPEN) {
+        disconnectMetricsWS();
+    } else {
+        connectMetricsWS();
+    }
+}
+
+function connectMetricsWS() {
+    if (metricsSocket) metricsSocket.close();
+    const wsUrl = ((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + "/ws?device_id=admin-dashboard&stream=metrics";
+    metricsSocket = new WebSocket(wsUrl);
+    metricsSocket.onopen = () => updateWSButtonState('metrics', true);
+    metricsSocket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        const update = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+        update('cpu-usage', data.cpu + '%');
+        update('ram-usage', data.ram);
+        update('uptime', data.uptime);
+    };
+    metricsSocket.onclose = () => updateWSButtonState('metrics', false);
+    metricsSocket.onerror = () => updateWSButtonState('metrics', false);
+}
+
+function disconnectMetricsWS() {
+    if (metricsSocket) { metricsSocket.close(); metricsSocket = null; }
+    updateWSButtonState('metrics', false);
+}
+
+// --- Users WebSocket (Auto-Connect) ---
+function connectUsersWS() {
+    if (usersSocket) usersSocket.close();
+    // Always connect to 'users' stream automatically
+    const wsUrl = ((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + "/ws?device_id=admin-dashboard&stream=users";
+    usersSocket = new WebSocket(wsUrl);
+    
+    usersSocket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        const update = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+        update('active-users', data.activeUsers);
+    };
+    
+    // Auto-reconnect on close/error after delay
+    usersSocket.onclose = () => setTimeout(connectUsersWS, 3000);
+    usersSocket.onerror = () => usersSocket.close(); 
+}
+
+function updateWSButtonState(type, connected) {
+    // Only Metrics has a button now
+    if (type !== 'metrics') return;
+
+    const btn = document.getElementById('ws-metrics-btn');
+    const icon = document.getElementById('ws-metrics-icon');
+    const text = document.getElementById('ws-metrics-text');
+    
+    if (!btn) return;
+
+    if (connected) {
+        btn.classList.remove('bg-[#34d399]/10', 'text-[#34d399]', 'border-[#34d399]/20', 'hover:bg-[#34d399]/20');
+        btn.classList.add('bg-[#f87171]/10', 'text-[#f87171]', 'border-[#f87171]/20', 'hover:bg-[#f87171]/20');
+        icon.classList.remove('bg-gray-500');
+        icon.classList.add('bg-[#34d399]', 'animate-pulse');
+        text.textContent = 'Disconnect Metrics';
+    } else {
+        btn.classList.remove('bg-[#f87171]/10', 'text-[#f87171]', 'border-[#f87171]/20', 'hover:bg-[#f87171]/20');
+        btn.classList.add('bg-[#34d399]/10', 'text-[#34d399]', 'border-[#34d399]/20', 'hover:bg-[#34d399]/20');
+        icon.classList.remove('bg-[#34d399]', 'animate-pulse');
+        icon.classList.add('bg-gray-500');
+        text.textContent = 'Connect Metrics';
+    }
+}
+
+// Initial connection
+connectUsersWS();
+
+// Update UI when Overview tab is loaded
+document.body.addEventListener('htmx:afterSwap', function(event) {
+    if (event.detail.target.id === 'tab-content') {
+        updateWSButtonState('metrics', metricsSocket && metricsSocket.readyState === WebSocket.OPEN);
+        // User WS is always connected in background, no UI button to update
+    }
+});
+</script>
 {% endblock %}

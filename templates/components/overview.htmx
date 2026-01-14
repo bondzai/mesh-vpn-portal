@@ -1,10 +1,21 @@
 <div class="space-y-6">
     <!-- System Overview Card -->
     <div class="bg-black/20 backdrop-blur-md rounded-xl shadow-lg border border-white/5 overflow-hidden ring-1 ring-white/5 p-6">
-        <h2 class="text-lg font-semibold text-gray-100 mb-6 flex items-center gap-2">
-            <svg class="w-5 h-5 text-[#38bdf8]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            Real-time Metrics
-        </h2>
+        <div class="flex items-center gap-4 mb-6">
+            <h2 class="text-lg font-semibold text-gray-100 flex items-center gap-2 mr-auto">
+                <svg class="w-5 h-5 text-[#38bdf8]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Real-time Metrics
+            </h2>
+            
+            <!-- Real-time Metrics Toggle -->
+            <button id="ws-metrics-btn" 
+                    onclick="toggleMetricsWS()"
+                    class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 bg-[#34d399]/10 text-[#34d399] border border-[#34d399]/20 hover:bg-[#34d399]/20">
+                <span id="ws-metrics-icon" class="w-2 h-2 mr-2 rounded-full bg-gray-500"></span>
+                <span id="ws-metrics-text" class="mr-2">Metrics</span>
+            </button>
+
+        </div>
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <!-- Active Users -->
@@ -45,33 +56,4 @@
         </div>
     </div>
     
-    <!-- WebSocket Script for Real-time Updates -->
-    <script>
-        document.body.addEventListener('htmx:wsBeforeMessage', function(e) {
-            // Optional: handle pre-message
-        });
-        
-        // Custom handler if we want to manually parse instead of htmx swapping, 
-        // BUT HTMX ws extension expects the server to send HTML to swap.
-        // Wait, the plan was to send JSON via WS and update UI via JS, OR send HTML via WS.
-        // The implementation in websocket.rs sends JSON: `serde_json::to_string(&stats)`.
-        // So we need a script to parse that JSON and update the DOM elements.
-        
-        const socket = new WebSocket(((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + "/ws?device_id=admin-dashboard");
-        
-        socket.onmessage = function(event) {
-            const data = JSON.parse(event.data);
-            
-            // Safe Update Helper
-            const update = (id, value) => {
-                const el = document.getElementById(id);
-                if (el) el.textContent = value;
-            };
-            
-            update('active-users', data.activeUsers);
-            update('cpu-usage', data.cpu + '%');
-            update('ram-usage', data.ram);
-            update('uptime', data.uptime);
-        };
-    </script>
 </div>

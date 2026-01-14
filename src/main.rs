@@ -49,7 +49,8 @@ async fn main() {
                 .route("/admin", get(api::htmx::dashboard_handler))
                 .route("/htmx/overview", get(api::htmx::overview_tab_handler))
                 .route("/htmx/logs-tab", get(api::htmx::logs_tab_handler))
-                .route("/htmx/logs", get(api::htmx::logs_handler)) // Keep for table pagination
+                .route("/htmx/logs", get(api::htmx::logs_handler))
+                .route("/htmx/active-users", get(api::htmx::active_users_tab_handler))
                 .route("/api/logs", get(api::admin::get_logs).delete(api::admin::clear_logs))
                 .route("/api/export", get(api::admin::download_logs))
                 .route("/api/status", get(api::admin::get_system_status))

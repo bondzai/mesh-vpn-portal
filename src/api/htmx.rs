@@ -90,6 +90,20 @@ pub struct TableTemplate {
     pub order: String,
 }
 
+#[derive(Clone, Debug)]
+pub struct ActiveUserDisplay {
+    pub device_id: String,
+    pub ip: String,
+    pub device: String,
+    pub duration: String,
+}
+
+#[derive(Template)]
+#[template(path = "components/active_users.htmx", escape = "html")]
+pub struct ActiveUsersTemplate {
+    pub users: Vec<ActiveUserDisplay>,
+}
+
 #[derive(Template)]
 #[template(path = "logged_out.htmx", escape = "html")]
 pub struct LoggedOutTemplate;
@@ -196,7 +210,30 @@ pub async fn logs_handler(
     })
 }
 
+pub async fn active_users_tab_handler(
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    let connections = state.get_active_users();
+    let users: Vec<ActiveUserDisplay> = connections.iter().map(|c| {
+        let duration = c.connected_at.elapsed();
+        let secs = duration.as_secs();
+        let duration_str = if secs < 60 {
+            format!("{}s", secs)
+        } else if secs < 3600 {
+            format!("{}m {}s", secs / 60, secs % 60)
+        } else {
+            format!("{}h {}m", secs / 3600, (secs % 3600) / 60)
+        };
+        ActiveUserDisplay {
+            device_id: c.device_id.clone(),
+            ip: c.ip.clone(),
+            device: c.device.clone(),
+            duration: duration_str,
+        }
+    }).collect();
 
+    HtmlTemplate(ActiveUsersTemplate { users })
+}
 // Helper for System Metrics
 fn get_system_metrics(state: &AppState) -> (String, String, String) {
     let mut sys = state.system.lock().unwrap();

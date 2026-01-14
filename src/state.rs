@@ -10,15 +10,22 @@ use std::collections::HashMap;
 use axum_extra::extract::cookie::Key;
 use axum::extract::FromRef;
 
+#[derive(Clone, Debug)]
+pub struct ActiveConnection {
+    pub ip: String,
+    pub device: String,
+    pub device_id: String,
+    pub connected_at: Instant,
+}
+
 #[derive(Clone)]
 pub struct AppState {
-    pub active_connections: Arc<Mutex<HashMap<String, u32>>>,
+    pub active_connections: Arc<Mutex<HashMap<String, ActiveConnection>>>,
     pub tx: broadcast::Sender<DashboardStats>, 
     pub logger: Arc<dyn EventLogger + Send + Sync>,
     pub log_repository: Arc<dyn LogRepository>,
     pub system: Arc<Mutex<System>>,
     pub start_time: Instant,
-    pub connection_start_times: Arc<Mutex<HashMap<String, Instant>>>,
     pub key: Key,
 }
 
@@ -36,56 +43,45 @@ impl AppState {
             log_repository,
             system: Arc::new(Mutex::new(sys)),
             start_time: Instant::now(),
-            connection_start_times: Arc::new(Mutex::new(HashMap::new())),
             key: Key::generate(),
         }
     }
     pub fn join(&self, ip: &str, device: &str, device_id: &str) -> u32 {
         let mut conn_map = self.active_connections.lock().unwrap();
-        *conn_map.entry(device_id.to_string()).or_insert(0) += 1;
+        conn_map.insert(device_id.to_string(), ActiveConnection {
+            ip: ip.to_string(),
+            device: device.to_string(),
+            device_id: device_id.to_string(),
+            connected_at: Instant::now(),
+        });
         let count = conn_map.len() as u32;
-        drop(conn_map); // Unlock before logging/sending to avoid blocking
-
-        if count == 1 {
-            let mut start_times = self.connection_start_times.lock().unwrap();
-            start_times.insert(device_id.to_string(), Instant::now());
-        }
+        drop(conn_map);
 
         self.logger.log(ip, device, device_id, "CONNECTED", count, None);
-        // Stats broadcast is handled by the background loop
         count
     }
 
     pub fn leave(&self, ip: &str, device: &str, device_id: &str) -> u32 {
         let mut conn_map = self.active_connections.lock().unwrap();
-        if let Some(c) = conn_map.get_mut(device_id) {
-            *c -= 1;
-            if *c == 0 {
-                conn_map.remove(device_id);
-            }
+        let mut duration_str = None;
+        
+        if let Some(conn) = conn_map.remove(device_id) {
+            let duration = conn.connected_at.elapsed();
+            let secs = duration.as_secs();
+            let formatted = if secs < 60 {
+                format!("{}s", secs)
+            } else if secs < 3600 {
+                format!("{}m {}s", secs / 60, secs % 60)
+            } else {
+                format!("{}h {}m", secs / 3600, (secs % 3600) / 60)
+            };
+            duration_str = Some(formatted);
         }
+        
         let count = conn_map.len() as u32;
         drop(conn_map);
 
-        let mut duration_str = None;
-        if count == 0 {
-             let mut start_times = self.connection_start_times.lock().unwrap();
-             if let Some(start) = start_times.remove(device_id) {
-                 let duration = start.elapsed();
-                 let secs = duration.as_secs();
-                 let formatted = if secs < 60 {
-                     format!("{}s", secs)
-                 } else if secs < 3600 {
-                     format!("{}m {}s", secs / 60, secs % 60)
-                 } else {
-                     format!("{}h {}m", secs / 3600, (secs % 3600) / 60)
-                 };
-                 duration_str = Some(formatted);
-             }
-        }
-
         self.logger.log(ip, device, device_id, "DISCONNECTED", count, duration_str);
-        // Stats broadcast is handled by the background loop
         count
     }
     
@@ -108,17 +104,27 @@ impl AppState {
         let cpu = format!("{:.1}", sys.global_cpu_usage());
         let ram = format!("{}MB / {}MB", sys.used_memory() / 1024 / 1024, sys.total_memory() / 1024 / 1024);
         
-        // Active users
-        let active_users = self.active_connections.lock().unwrap().len() as u32;
+        // Active users (exclude admin dashboard)
+        let active_users = self.active_connections.lock().unwrap()
+            .values()
+            .filter(|c| c.device_id != "admin-dashboard")
+            .count() as u32;
 
         crate::domain::DashboardStats {
             active_users,
-            total_users: active_users, // For now total = active in this context, or maybe total since boot? 
-                                     // The original UserStats had total_users=count too.
+            total_users: active_users,
             uptime,
             cpu,
             ram,
         }
+    }
+
+    pub fn get_active_users(&self) -> Vec<ActiveConnection> {
+        self.active_connections.lock().unwrap()
+            .values()
+            .filter(|c| c.device_id != "admin-dashboard")
+            .cloned()
+            .collect()
     }
 }
 
