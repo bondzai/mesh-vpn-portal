@@ -8,8 +8,7 @@
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <!-- Active Users -->
-            <div onclick="document.getElementById('tab-active-sessions').click()" 
-                 class="p-4 rounded-lg bg-white/5 border border-white/5 group hover:border-[#38bdf8]/30 transition-all duration-300 cursor-pointer shadow-md hover:shadow-lg hover:shadow-[#38bdf8]/10">
+            <div class="p-4 rounded-lg bg-white/5 border border-white/5 group hover:border-[#38bdf8]/30 transition-all duration-300">
                 <div class="text-sm text-gray-400 mb-1">Active Users</div>
                 <div class="text-2xl font-bold text-gray-100 group-hover:text-[#38bdf8] transition-colors" id="active-users">{{ active_users }}</div>
             </div>
@@ -35,14 +34,10 @@
     </div>
     
     <!-- Additional Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="bg-black/20 backdrop-blur-md rounded-xl p-6 border border-white/5">
             <h3 class="text-sm font-medium text-gray-400 uppercase tracking-wider mb-2">Total Events</h3>
             <div class="text-3xl font-bold text-gray-100">{{ total_events }}</div>
-        </div>
-        <div class="bg-black/20 backdrop-blur-md rounded-xl p-6 border border-white/5">
-            <h3 class="text-sm font-medium text-gray-400 uppercase tracking-wider mb-2">Unique IPs</h3>
-            <div class="text-3xl font-bold text-gray-100">{{ unique_ips }}</div>
         </div>
         <div class="bg-black/20 backdrop-blur-md rounded-xl p-6 border border-white/5">
              <h3 class="text-sm font-medium text-gray-400 uppercase tracking-wider mb-2">Unique Devices</h3>

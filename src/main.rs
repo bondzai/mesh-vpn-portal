@@ -1,5 +1,5 @@
 use axum::{
-    routing::{get, post},
+    routing::get,
     Router,
 };
 use tower_http::cors::CorsLayer;
@@ -48,7 +48,6 @@ async fn main() {
             Router::new()
                 .route("/admin", get(api::htmx::dashboard_handler))
                 .route("/htmx/overview", get(api::htmx::overview_tab_handler))
-                .route("/htmx/active-sessions-tab", get(api::htmx::active_sessions_tab_handler))
                 .route("/htmx/logs-tab", get(api::htmx::logs_tab_handler))
                 .route("/htmx/logs", get(api::htmx::logs_handler)) // Keep for table pagination
                 .route("/api/logs", get(api::admin::get_logs).delete(api::admin::clear_logs))

@@ -22,33 +22,28 @@
     <!-- Tabs -->
     <div class="border-b border-white/10">
         <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-            <button id="tab-overview"
-                    hx-get="/htmx/overview" 
+            <button hx-get="/htmx/overview" 
                     hx-target="#tab-content"
-                    onclick="switchTab(this)"
-                    class="tab-btn group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm border-[#38bdf8] text-[#38bdf8]">
+                    class="tab-btn group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm border-[#38bdf8] text-[#38bdf8]"
+                    _="on click 
+                       remove .border-[#38bdf8] .text-[#38bdf8] from .tab-btn 
+                       add .border-transparent .text-gray-400 .hover:text-gray-300 .hover:border-gray-300 to .tab-btn 
+                       remove .border-transparent .text-gray-400 .hover:text-gray-300 .hover:border-gray-300 from me 
+                       add .border-[#38bdf8] .text-[#38bdf8] to me">
                 <svg class="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
                 Overview
             </button>
 
-            <button id="tab-active-sessions"
-                    hx-get="/htmx/active-sessions-tab" 
+            <button hx-get="/htmx/logs-tab" 
                     hx-target="#tab-content"
-                    onclick="switchTab(this)"
-                    class="tab-btn group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-300">
-                <svg class="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-                Active Users
-            </button>
-
-            <button id="tab-logs"
-                    hx-get="/htmx/logs-tab" 
-                    hx-target="#tab-content"
-                    onclick="switchTab(this)"
-                    class="tab-btn group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-300">
+                    class="tab-btn group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-300"
+                    _="on click 
+                       remove .border-[#38bdf8] .text-[#38bdf8] from .tab-btn 
+                       add .border-transparent .text-gray-400 .hover:text-gray-300 .hover:border-gray-300 to .tab-btn 
+                       remove .border-transparent .text-gray-400 .hover:text-gray-300 .hover:border-gray-300 from me 
+                       add .border-[#38bdf8] .text-[#38bdf8] to me">
                 <svg class="mr-2 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
@@ -63,20 +58,5 @@
     </div>
 </div>
 
-<script>
-    function switchTab(clickedBtn) {
-        const inactiveClasses = ['border-transparent', 'text-gray-400', 'hover:text-gray-300', 'hover:border-gray-300'];
-        const activeClasses = ['border-[#38bdf8]', 'text-[#38bdf8]'];
-
-        // Reset all tabs to inactive state
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.classList.remove(...activeClasses);
-            btn.classList.add(...inactiveClasses);
-        });
-        
-        // Set clicked tab to active state
-        clickedBtn.classList.remove(...inactiveClasses);
-        clickedBtn.classList.add(...activeClasses);
-    }
-</script>
+<script src="https://unpkg.com/hyperscript.org@0.9.12"></script>
 {% endblock %}

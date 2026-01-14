@@ -6,7 +6,7 @@ use axum::{
 use askama::Template;
 use std::env;
 use crate::state::AppState;
-use crate::domain::{LogEntry, LogQuery, NavItem, ActiveSessionView};
+use crate::domain::{LogEntry, LogQuery, NavItem};
 
 // Wrapper struct for templates to implement IntoResponse
 pub struct HtmlTemplate<T>(pub T);
@@ -33,7 +33,6 @@ where
 pub struct DashboardTemplate {
     pub username: String,
     pub total_events: usize,
-    pub unique_ips: usize,
     pub unique_device_ids: usize,
     pub active_users: u32,
     pub uptime: String,
@@ -47,7 +46,6 @@ pub struct DashboardTemplate {
 pub struct OverviewTemplate {
     pub active_users: u32,
     pub total_events: usize,
-    pub unique_ips: usize,
     pub unique_device_ids: usize,
     pub uptime: String,
     pub cpu: String,
@@ -118,7 +116,6 @@ pub async fn dashboard_handler(
     HtmlTemplate(DashboardTemplate {
         username,
         total_events: meta.total,
-        unique_ips: stats.unique_ips,
         unique_device_ids: stats.unique_device_ids,
         active_users: stats.active_users,
         uptime,
@@ -156,25 +153,11 @@ pub async fn overview_tab_handler(
     HtmlTemplate(OverviewTemplate {
         active_users: stats.active_users,
         total_events: meta.total,
-        unique_ips: stats.unique_ips,
         unique_device_ids: stats.unique_device_ids,
         uptime,
         cpu,
         ram,
     })
-}
-
-#[derive(Template)]
-#[template(path = "components/active_sessions.htmx", escape = "html")]
-pub struct ActiveSessionsTemplate {
-    pub sessions: Vec<ActiveSessionView>,
-}
-
-pub async fn active_sessions_tab_handler(
-    State(state): State<AppState>,
-) -> impl IntoResponse {
-    let sessions = state.get_active_sessions();
-    HtmlTemplate(ActiveSessionsTemplate { sessions })
 }
 
 pub async fn logs_tab_handler(
@@ -213,9 +196,6 @@ pub async fn logs_handler(
     })
 }
 
-pub async fn logged_out_handler() -> impl IntoResponse {
-    HtmlTemplate(LoggedOutTemplate)
-}
 
 // Helper for System Metrics
 fn get_system_metrics(state: &AppState) -> (String, String, String) {
