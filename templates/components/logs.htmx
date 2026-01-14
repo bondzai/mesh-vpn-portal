@@ -24,12 +24,12 @@
                             hx-delete="/api/logs"
                             hx-confirm="Are you sure you want to clear all logs?"
                             hx-target="#logs-table-wrapper"
-                            class="inline-flex items-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-[#f87171] bg-[#f87171]/10 hover:bg-[#f87171]/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#f87171] focus:ring-offset-[#27272a] transition-all duration-200 backdrop-blur-sm">
+                            class="inline-flex items-center px-4 py-2.5 border border-transparent text-sm font-medium rounded-lg text-[#f87171] bg-[#f87171]/10 hover:bg-[#f87171]/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#f87171] focus:ring-offset-black transition-all duration-200 backdrop-blur-sm">
                         Clear Logs
                     </button>
                     <a href="/api/export" 
                        target="_blank"
-                       class="inline-flex items-center px-4 py-2.5 border border-white/10 shadow-sm text-sm font-medium rounded-lg text-gray-200 bg-white/5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#38bdf8] focus:ring-offset-[#27272a] transition-all duration-200 backdrop-blur-sm">
+                       class="inline-flex items-center px-4 py-2.5 border border-white/10 shadow-sm text-sm font-medium rounded-lg text-gray-200 bg-white/5 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#38bdf8] focus:ring-offset-black transition-all duration-200 backdrop-blur-sm">
                         Export CSV
                     </a>
                 </div>

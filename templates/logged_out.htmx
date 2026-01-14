@@ -11,23 +11,29 @@
 
         body {
             font-family: 'Inter', sans-serif;
+            background-color: #050505;
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.05) 0%, transparent 60%),
+                radial-gradient(circle at 0% 0%, rgba(56, 189, 248, 0.02) 0%, transparent 50%),
+                radial-gradient(circle at 100% 0%, rgba(56, 189, 248, 0.02) 0%, transparent 50%);
+            background-attachment: fixed;
         }
     </style>
 </head>
 
-<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
-    <div class="bg-white p-8 rounded-lg shadow-md max-w-sm w-full text-center">
+<body class="min-h-screen flex items-center justify-center p-4 selection:bg-[#38bdf8]/30">
+    <div class="bg-black/40 backdrop-blur-xl p-8 rounded-2xl shadow-xl max-w-sm w-full border border-white/5 ring-1 ring-white/5 text-center">
         <div class="mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-indigo-500 mx-auto" fill="none"
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-[#38bdf8] mx-auto" fill="none"
                 viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
         </div>
-        <h1 class="text-2xl font-bold text-gray-900 mb-2">You have been logged out</h1>
-        <p class="text-gray-600 mb-6">Thank you for using the Admin Dashboard.</p>
+        <h1 class="text-2xl font-bold text-gray-100 mb-2">You have been logged out</h1>
+        <p class="text-gray-400 mb-6">Thank you for using the Admin Dashboard.</p>
         <a href="/admin"
-            class="inline-block w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out">
+            class="inline-block w-full bg-[#0ea5e9] hover:bg-[#0284c7] text-white font-medium py-2 px-4 rounded-lg transition duration-150 ease-in-out shadow-lg shadow-[#0ea5e9]/20">
             Log in again
         </a>
     </div>
