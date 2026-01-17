@@ -61,7 +61,35 @@ async fn main() {
                 )),
         )
         .with_state(app_state)
-        .layer(CorsLayer::permissive());
+        .layer({
+            // Read allowed origins from env
+            let allowed_origins = std::env::var("ALLOWED_ORIGINS")
+                .unwrap_or_default()
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect::<Vec<String>>();
+
+            if allowed_origins.is_empty() {
+                println!("WARNING: ALLOWED_ORIGINS not set. Defaulting to permissive CORS.");
+                CorsLayer::permissive()
+            } else {
+                use axum::http::HeaderValue;
+                use axum::http::Method;
+                
+                let origins: Vec<HeaderValue> = allowed_origins
+                    .iter()
+                    .map(|s| s.parse::<HeaderValue>().unwrap())
+                    .collect();
+                    
+                println!("Configuring CORS for origins: {:?}", allowed_origins);
+                
+                CorsLayer::new()
+                    .allow_origin(origins)
+                    .allow_methods([Method::GET, Method::POST, Method::DELETE, Method::OPTIONS])
+                    .allow_headers(tower_http::cors::Any)
+            }
+        });
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
     println!("listening on {}", addr);
