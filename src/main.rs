@@ -34,8 +34,8 @@ async fn main() {
         let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(2));
         loop {
             interval.tick().await;
-            let stats = app_state_for_task.get_dashboard_stats();
-            let _ = app_state_for_task.tx.send(stats);
+            let stats = app_state_for_task.get_system_metrics();
+            let _ = app_state_for_task.system_tx.send(stats);
         }
     });
 
@@ -43,7 +43,8 @@ async fn main() {
         .route("/health", get(api::health::health_check))
         .route("/login", get(api::auth::login_page).post(api::auth::login_submit))
         .route("/logout", get(api::auth::logout))
-        .route("/ws", get(api::websocket::ws_handler))
+        .route("/client/ws", get(api::websocket::client_ws_handler))
+        .route("/admin/ws", get(api::websocket::admin_ws_handler))
         .merge(
             Router::new()
                 .route("/admin", get(api::htmx::dashboard_handler))

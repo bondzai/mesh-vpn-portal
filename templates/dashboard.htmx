@@ -105,7 +105,7 @@ function toggleMetricsWS() {
 
 function connectMetricsWS() {
     if (metricsSocket) metricsSocket.close();
-    const wsUrl = ((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + "/ws?device_id=admin-dashboard&stream=metrics";
+    const wsUrl = ((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + "/admin/ws?device_id=admin-dashboard";
     metricsSocket = new WebSocket(wsUrl);
     metricsSocket.onopen = () => updateWSButtonState('metrics', true);
     metricsSocket.onmessage = (event) => {
@@ -128,7 +128,7 @@ function disconnectMetricsWS() {
 function connectUsersWS() {
     if (usersSocket) usersSocket.close();
     // Always connect to 'users' stream automatically
-    const wsUrl = ((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + "/ws?device_id=admin-dashboard&stream=users";
+    const wsUrl = ((window.location.protocol === "https:") ? "wss://" : "ws://") + window.location.host + "/client/ws?device_id=admin-dashboard";
     usersSocket = new WebSocket(wsUrl);
     
     usersSocket.onmessage = (event) => {

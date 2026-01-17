@@ -4,6 +4,23 @@ pub mod logger;
 pub mod repositories;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SystemMetrics {
+    pub uptime: String,
+    pub cpu: String,
+    pub ram: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UserMetrics {
+    #[serde(rename = "activeUsers")]
+    pub active_users: u32,
+    #[serde(rename = "totalUsers")]
+    pub total_users: u32,
+}
+
+// Keep DashboardStats for backward compatibility / initial render if needed, 
+// or reconstruct it from the two new structs.
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DashboardStats {
     #[serde(rename = "activeUsers")]
     pub active_users: u32,

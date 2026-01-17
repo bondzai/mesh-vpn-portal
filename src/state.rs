@@ -21,7 +21,8 @@ pub struct ActiveConnection {
 #[derive(Clone)]
 pub struct AppState {
     pub active_connections: Arc<Mutex<HashMap<String, ActiveConnection>>>,
-    pub tx: broadcast::Sender<DashboardStats>, 
+    pub system_tx: broadcast::Sender<crate::domain::SystemMetrics>,
+    pub users_tx: broadcast::Sender<crate::domain::UserMetrics>,
     pub logger: Arc<dyn EventLogger + Send + Sync>,
     pub log_repository: Arc<dyn LogRepository>,
     pub system: Arc<Mutex<System>>,
@@ -31,14 +32,16 @@ pub struct AppState {
 
 impl AppState {
     pub fn new(logger: Arc<dyn EventLogger + Send + Sync>, log_repository: Arc<dyn LogRepository>) -> Self {
-        let (tx, _) = broadcast::channel(100);
+        let (system_tx, _) = broadcast::channel(100);
+        let (users_tx, _) = broadcast::channel(100);
         
         let mut sys = System::new_all();
         sys.refresh_all();
         
         Self {
             active_connections: Arc::new(Mutex::new(HashMap::new())),
-            tx,
+            system_tx,
+            users_tx,
             logger,
             log_repository,
             system: Arc::new(Mutex::new(sys)),
@@ -58,6 +61,10 @@ impl AppState {
         drop(conn_map);
 
         self.logger.log(ip, device, device_id, "CONNECTED", count, None);
+        
+        // Notify user stream
+        let _ = self.users_tx.send(self.get_user_metrics());
+
         count
     }
 
@@ -82,6 +89,10 @@ impl AppState {
         drop(conn_map);
 
         self.logger.log(ip, device, device_id, "DISCONNECTED", count, duration_str);
+
+        // Notify user stream
+        let _ = self.users_tx.send(self.get_user_metrics());
+
         count
     }
     
@@ -116,6 +127,39 @@ impl AppState {
             uptime,
             cpu,
             ram,
+        }
+    }
+
+    pub fn get_system_metrics(&self) -> crate::domain::SystemMetrics {
+        let mut sys = self.system.lock().unwrap();
+        sys.refresh_cpu_all();
+        sys.refresh_memory();
+
+        let uptime_sec = self.start_time.elapsed().as_secs();
+        let hrs = uptime_sec / 3600;
+        let mins = (uptime_sec % 3600) / 60;
+        let secs = uptime_sec % 60;
+        let uptime = format!("{}h {}m {}s", hrs, mins, secs);
+
+        let cpu = format!("{:.1}", sys.global_cpu_usage());
+        let ram = format!("{}MB / {}MB", sys.used_memory() / 1024 / 1024, sys.total_memory() / 1024 / 1024);
+
+        crate::domain::SystemMetrics {
+            uptime,
+            cpu,
+            ram,
+        }
+    }
+
+    pub fn get_user_metrics(&self) -> crate::domain::UserMetrics {
+        let active_users = self.active_connections.lock().unwrap()
+            .values()
+            .filter(|c| c.device_id != "admin-dashboard")
+            .count() as u32;
+            
+        crate::domain::UserMetrics {
+            active_users,
+            total_users: active_users,
         }
     }
 
