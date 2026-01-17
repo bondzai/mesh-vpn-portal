@@ -1,11 +1,14 @@
+use crate::state::AppState;
 use axum::{
-    extract::{ws::{Message, WebSocket, WebSocketUpgrade}, State, ConnectInfo, Query},
-    response::IntoResponse,
+    extract::{
+        ConnectInfo, Query, State,
+        ws::{Message, WebSocket, WebSocketUpgrade},
+    },
     http::HeaderMap,
+    response::IntoResponse,
 };
 use std::collections::HashMap;
 use std::net::SocketAddr;
-use crate::state::AppState;
 
 pub async fn client_ws_handler(
     ws: WebSocketUpgrade,
@@ -30,9 +33,9 @@ pub async fn admin_ws_handler(
 }
 
 fn extract_connection_info(
-    headers: HeaderMap, 
-    params: HashMap<String, String>, 
-    addr: SocketAddr
+    headers: HeaderMap,
+    params: HashMap<String, String>,
+    addr: SocketAddr,
 ) -> (String, String, String) {
     // Extract User-Agent
     let device = headers
@@ -44,7 +47,7 @@ fn extract_connection_info(
     // Extract Device ID
     let device_id = params.get("device_id").cloned().unwrap_or_else(|| {
         use rand::Rng;
-        let mut rng = rand::rng(); 
+        let mut rng = rand::rng();
         let id: u32 = rng.random();
         format!("anon-{}", id)
     });
@@ -65,7 +68,13 @@ fn extract_connection_info(
     (ip, device, device_id)
 }
 
-async fn handle_system_socket(mut socket: WebSocket, state: AppState, ip: String, device: String, device_id: String) {
+async fn handle_system_socket(
+    mut socket: WebSocket,
+    state: AppState,
+    ip: String,
+    device: String,
+    device_id: String,
+) {
     // 1. Client connected
     state.join(&ip, &device, &device_id);
 
@@ -75,8 +84,12 @@ async fn handle_system_socket(mut socket: WebSocket, state: AppState, ip: String
     // 3. Send initial state immediately
     let stats = state.get_system_metrics();
     let initial_msg = serde_json::to_string(&stats).unwrap();
-    
-    if socket.send(Message::Text(initial_msg.into())).await.is_err() {
+
+    if socket
+        .send(Message::Text(initial_msg.into()))
+        .await
+        .is_err()
+    {
         state.leave(&ip, &device, &device_id);
         return;
     }
@@ -94,8 +107,8 @@ async fn handle_system_socket(mut socket: WebSocket, state: AppState, ip: String
             // Receive message from client (ignore or handle close)
             incoming = socket.recv() => {
                 match incoming {
-                    Some(Ok(_)) => {}, 
-                    _ => break, 
+                    Some(Ok(_)) => {},
+                    _ => break,
                 }
             }
         }
@@ -105,7 +118,13 @@ async fn handle_system_socket(mut socket: WebSocket, state: AppState, ip: String
     state.leave(&ip, &device, &device_id);
 }
 
-async fn handle_user_socket(mut socket: WebSocket, state: AppState, ip: String, device: String, device_id: String) {
+async fn handle_user_socket(
+    mut socket: WebSocket,
+    state: AppState,
+    ip: String,
+    device: String,
+    device_id: String,
+) {
     // 1. Client connected
     state.join(&ip, &device, &device_id);
 
@@ -115,8 +134,12 @@ async fn handle_user_socket(mut socket: WebSocket, state: AppState, ip: String, 
     // 3. Send initial state immediately
     let stats = state.get_user_metrics();
     let initial_msg = serde_json::to_string(&stats).unwrap();
-    
-    if socket.send(Message::Text(initial_msg.into())).await.is_err() {
+
+    if socket
+        .send(Message::Text(initial_msg.into()))
+        .await
+        .is_err()
+    {
         state.leave(&ip, &device, &device_id);
         return;
     }

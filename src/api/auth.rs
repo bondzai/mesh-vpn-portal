@@ -1,12 +1,12 @@
+use crate::api::htmx::HtmlTemplate;
+use askama::Template;
 use axum::{
-    response::{IntoResponse, Redirect},
     extract::Form,
+    response::{IntoResponse, Redirect},
 };
 use axum_extra::extract::cookie::{Cookie, SameSite, SignedCookieJar};
-use askama::Template;
 use serde::Deserialize;
 use std::env;
-use crate::api::htmx::HtmlTemplate;
 
 #[derive(Template)]
 #[template(path = "login.htmx", escape = "html")]
@@ -57,6 +57,6 @@ pub async fn logout(jar: SignedCookieJar) -> impl IntoResponse {
         .path("/")
         .max_age(time::Duration::seconds(0))
         .build();
-    
+
     (jar.remove(cookie), Redirect::to("/login"))
 }

@@ -1,12 +1,12 @@
 use crate::state::AppState;
 use axum::{
-    response::{IntoResponse, Json, Response},
-    http::{StatusCode, HeaderMap, header},
-    extract::{State, Query},
     body::Body,
+    extract::{Query, State},
+    http::{HeaderMap, StatusCode, header},
+    response::{IntoResponse, Json, Response},
 };
-use std::env;
 use serde_json::json;
+use std::env;
 
 pub async fn get_system_status(State(state): State<AppState>) -> impl IntoResponse {
     let mut sys = state.system.lock().unwrap();
@@ -23,7 +23,8 @@ pub async fn get_system_status(State(state): State<AppState>) -> impl IntoRespon
         "memory_used_mb": used_mem,
         "memory_total_mb": total_mem,
         "cpu_usage_percent": cpu_usage
-    })).into_response()
+    }))
+    .into_response()
 }
 
 // Helper to get log path
@@ -31,15 +32,11 @@ use crate::domain::{LogQuery, LogsResponse};
 
 pub async fn get_logs(
     State(state): State<AppState>,
-    Query(params): Query<LogQuery>
+    Query(params): Query<LogQuery>,
 ) -> impl IntoResponse {
     let (data, meta, stats) = state.log_repository.find_all(&params);
 
-    Json(LogsResponse {
-        data,
-        meta,
-        stats,
-    }).into_response()
+    Json(LogsResponse { data, meta, stats }).into_response()
 }
 
 fn check_auth(headers: &HeaderMap) -> bool {
@@ -55,36 +52,48 @@ fn check_auth(headers: &HeaderMap) -> bool {
         .unwrap_or(false)
 }
 
-pub async fn clear_logs(
-    State(state): State<AppState>,
-    headers: HeaderMap
-) -> impl IntoResponse {
+pub async fn clear_logs(State(state): State<AppState>, headers: HeaderMap) -> impl IntoResponse {
     if !check_auth(&headers) {
-         return (StatusCode::UNAUTHORIZED, Json(json!({"error": "Unauthorized"}))).into_response();
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(json!({"error": "Unauthorized"})),
+        )
+            .into_response();
     }
 
     match state.log_repository.clear() {
         Ok(_) => (StatusCode::OK, Json(json!({"status": "cleared"}))).into_response(),
-        Err(e) => (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": e.to_string()}))).into_response(),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": e.to_string()})),
+        )
+            .into_response(),
     }
 }
 
-pub async fn download_logs(
-    State(state): State<AppState>,
-    headers: HeaderMap
-) -> impl IntoResponse {
+pub async fn download_logs(State(state): State<AppState>, headers: HeaderMap) -> impl IntoResponse {
     if !check_auth(&headers) {
-         return (StatusCode::UNAUTHORIZED, "Unauthorized").into_response();
+        return (StatusCode::UNAUTHORIZED, "Unauthorized").into_response();
     }
 
     match state.log_repository.get_raw_content() {
         Ok(content) => {
-             // Create csv filename with today date?
-             // Simple "server_logs.csv" is fine or maybe "logs_TIMESTAMP.csv".
-             // Let's stick to simple "server_logs.csv".
-             ([(header::CONTENT_TYPE, "text/csv"), (header::CONTENT_DISPOSITION, "attachment; filename=\"server_logs.csv\"")], content).into_response()
-        },
-        Err(_) => (StatusCode::NOT_FOUND, "No logs found").into_response(), 
+            // Create csv filename with today date?
+            // Simple "server_logs.csv" is fine or maybe "logs_TIMESTAMP.csv".
+            // Let's stick to simple "server_logs.csv".
+            (
+                [
+                    (header::CONTENT_TYPE, "text/csv"),
+                    (
+                        header::CONTENT_DISPOSITION,
+                        "attachment; filename=\"server_logs.csv\"",
+                    ),
+                ],
+                content,
+            )
+                .into_response()
+        }
+        Err(_) => (StatusCode::NOT_FOUND, "No logs found").into_response(),
     }
 }
 
@@ -93,5 +102,3 @@ pub async fn logout_handler() -> impl IntoResponse {
     *response.status_mut() = StatusCode::OK;
     response
 }
-
-

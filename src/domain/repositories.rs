@@ -1,4 +1,4 @@
-use crate::domain::{LogEntry, LogMetadata, LogStats, LogQuery};
+use crate::domain::{LogEntry, LogMetadata, LogQuery, LogStats};
 use std::error::Error;
 
 pub trait LogRepository: Send + Sync {

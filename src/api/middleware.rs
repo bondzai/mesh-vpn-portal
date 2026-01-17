@@ -2,7 +2,7 @@ use axum::{
     body::Body,
     http::{Request, StatusCode},
     middleware::Next,
-    response::{Redirect, Response, IntoResponse},
+    response::{IntoResponse, Redirect, Response},
 };
 use axum_extra::extract::cookie::SignedCookieJar;
 
@@ -12,7 +12,7 @@ pub async fn auth(
     next: Next,
 ) -> Result<Response, StatusCode> {
     if jar.get("auth_token").is_some() {
-         return Ok(next.run(req).await);
+        return Ok(next.run(req).await);
     }
 
     Ok(Redirect::to("/login").into_response())

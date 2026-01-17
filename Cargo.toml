@@ -18,3 +18,9 @@ sysinfo = "0.37.2"
 time = "0.3.44"
 tokio = { version = "1.49.0", features = ["full"] }
 tower-http = { version = "0.6.8", features = ["cors"] }
+
+[dev-dependencies]
+futures-util = "0.3.31"
+reqwest = { version = "0.13.1", features = ["json", "rustls"], default-features = false }
+tokio-tungstenite = { version = "0.28.0", features = ["rustls-tls-native-roots", "connect"], default-features = false }
+url = "2.5.8"

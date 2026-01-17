@@ -18,7 +18,7 @@ pub struct UserMetrics {
     pub total_users: u32,
 }
 
-// Keep DashboardStats for backward compatibility / initial render if needed, 
+// Keep DashboardStats for backward compatibility / initial render if needed,
 // or reconstruct it from the two new structs.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DashboardStats {
@@ -30,7 +30,6 @@ pub struct DashboardStats {
     pub cpu: String,
     pub ram: String,
 }
-
 
 #[derive(Debug, Serialize, Clone)]
 pub struct NavItem {
@@ -88,7 +87,15 @@ pub struct LogQuery {
     pub order: String,
 }
 
-fn default_page() -> usize { 1 }
-fn default_page_size() -> usize { 50 }
-fn default_sort_by() -> String { "timestamp".to_string() }
-fn default_order() -> String { "desc".to_string() }
+fn default_page() -> usize {
+    1
+}
+fn default_page_size() -> usize {
+    50
+}
+fn default_sort_by() -> String {
+    "timestamp".to_string()
+}
+fn default_order() -> String {
+    "desc".to_string()
+}

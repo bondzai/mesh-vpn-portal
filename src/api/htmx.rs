@@ -1,12 +1,12 @@
+use crate::domain::{LogEntry, LogQuery, NavItem};
+use crate::state::AppState;
+use askama::Template;
 use axum::{
     extract::{Query, State},
-    response::{Html, IntoResponse, Response},
     http::StatusCode,
+    response::{Html, IntoResponse, Response},
 };
-use askama::Template;
 use std::env;
-use crate::state::AppState;
-use crate::domain::{LogEntry, LogQuery, NavItem};
 
 // Wrapper struct for templates to implement IntoResponse
 pub struct HtmlTemplate<T>(pub T);
@@ -110,9 +110,7 @@ pub struct LoggedOutTemplate;
 
 // Handlers
 
-pub async fn dashboard_handler(
-    State(state): State<AppState>,
-) -> impl IntoResponse {
+pub async fn dashboard_handler(State(state): State<AppState>) -> impl IntoResponse {
     // Only need stats for initial overview load
     let params = LogQuery {
         page: 1,
@@ -121,7 +119,7 @@ pub async fn dashboard_handler(
         sort_by: "timestamp".to_string(),
         order: "desc".to_string(),
     };
-    
+
     let (_, meta, stats) = state.log_repository.find_all(&params);
     let (uptime, cpu, ram) = get_system_metrics(&state);
 
@@ -150,9 +148,7 @@ fn get_nav_menu(current_path: &str) -> Vec<NavItem> {
     ]
 }
 
-pub async fn overview_tab_handler(
-    State(state): State<AppState>,
-) -> impl IntoResponse {
+pub async fn overview_tab_handler(State(state): State<AppState>) -> impl IntoResponse {
     let params = LogQuery {
         page: 1,
         page_size: 1,
@@ -160,7 +156,7 @@ pub async fn overview_tab_handler(
         sort_by: "timestamp".to_string(),
         order: "desc".to_string(),
     };
-    
+
     let (_, meta, stats) = state.log_repository.find_all(&params);
     let (uptime, cpu, ram) = get_system_metrics(&state);
 
@@ -210,27 +206,28 @@ pub async fn logs_handler(
     })
 }
 
-pub async fn active_users_tab_handler(
-    State(state): State<AppState>,
-) -> impl IntoResponse {
+pub async fn active_users_tab_handler(State(state): State<AppState>) -> impl IntoResponse {
     let connections = state.get_active_users();
-    let users: Vec<ActiveUserDisplay> = connections.iter().map(|c| {
-        let duration = c.connected_at.elapsed();
-        let secs = duration.as_secs();
-        let duration_str = if secs < 60 {
-            format!("{}s", secs)
-        } else if secs < 3600 {
-            format!("{}m {}s", secs / 60, secs % 60)
-        } else {
-            format!("{}h {}m", secs / 3600, (secs % 3600) / 60)
-        };
-        ActiveUserDisplay {
-            device_id: c.device_id.clone(),
-            ip: c.ip.clone(),
-            device: c.device.clone(),
-            duration: duration_str,
-        }
-    }).collect();
+    let users: Vec<ActiveUserDisplay> = connections
+        .iter()
+        .map(|c| {
+            let duration = c.connected_at.elapsed();
+            let secs = duration.as_secs();
+            let duration_str = if secs < 60 {
+                format!("{}s", secs)
+            } else if secs < 3600 {
+                format!("{}m {}s", secs / 60, secs % 60)
+            } else {
+                format!("{}h {}m", secs / 3600, (secs % 3600) / 60)
+            };
+            ActiveUserDisplay {
+                device_id: c.device_id.clone(),
+                ip: c.ip.clone(),
+                device: c.device.clone(),
+                duration: duration_str,
+            }
+        })
+        .collect();
 
     HtmlTemplate(ActiveUsersTemplate { users })
 }
@@ -247,7 +244,11 @@ fn get_system_metrics(state: &AppState) -> (String, String, String) {
     let uptime = format!("{}h {}m {}s", hrs, mins, secs);
 
     let cpu = format!("{:.1}", sys.global_cpu_usage());
-    let ram = format!("{}MB / {}MB", sys.used_memory() / 1024 / 1024, sys.total_memory() / 1024 / 1024);
-    
+    let ram = format!(
+        "{}MB / {}MB",
+        sys.used_memory() / 1024 / 1024,
+        sys.total_memory() / 1024 / 1024
+    );
+
     (uptime, cpu, ram)
 }

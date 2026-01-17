@@ -1,8 +1,8 @@
+use crate::domain::logger::EventLogger;
+use chrono::Local;
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::sync::Mutex;
-use crate::domain::logger::EventLogger;
-use chrono::Local;
 
 pub struct FileLogger {
     file: Mutex<std::fs::File>,
@@ -15,7 +15,7 @@ impl FileLogger {
             .append(true)
             .open(path)
             .expect("Unable to open log file");
-            
+
         Self {
             file: Mutex::new(file),
         }
@@ -26,7 +26,7 @@ impl FileLogger {
         // effectively shortening the long standard Mozilla/5.0 prefix and engine suffix.
         if let Some(start) = device.find('(') {
             if let Some(end) = device[start..].find(')') {
-                return device[start+1..start+end].to_string();
+                return device[start + 1..start + end].to_string();
             }
         }
         // Fallback: truncate to 30 chars
@@ -35,15 +35,27 @@ impl FileLogger {
 }
 
 impl EventLogger for FileLogger {
-    fn log(&self, ip: &str, device: &str, device_id: &str, action: &str, count: u32, duration: Option<String>) {
+    fn log(
+        &self,
+        ip: &str,
+        device: &str,
+        device_id: &str,
+        action: &str,
+        count: u32,
+        duration: Option<String>,
+    ) {
         if let Ok(mut file) = self.file.lock() {
             let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S %z");
             let short_device = Self::shorten_device(device);
             // Sanitize commas in device string
             let sanitized_device = short_device.replace(",", " ");
             let duration_str = duration.unwrap_or_default();
-            
-            if let Err(e) = writeln!(file, "{},{},{},{},{},{},{}", timestamp, ip, sanitized_device, device_id, action, count, duration_str) {
+
+            if let Err(e) = writeln!(
+                file,
+                "{},{},{},{},{},{},{}",
+                timestamp, ip, sanitized_device, device_id, action, count, duration_str
+            ) {
                 eprintln!("Failed to write to log: {}", e);
             }
         }
