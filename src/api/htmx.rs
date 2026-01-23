@@ -39,6 +39,10 @@ pub struct DashboardTemplate {
     pub cpu: String,
     pub ram: String,
     pub nav_items: Vec<NavItem>,
+    pub unique_ips: usize,
+    pub top_ips: Vec<(String, u32)>,
+    pub chart_labels: String,
+    pub chart_data: String,
 }
 
 #[derive(Template)]
@@ -47,15 +51,20 @@ pub struct OverviewTemplate {
     pub active_users: u32,
     pub total_events: usize,
     pub unique_device_ids: usize,
+    pub unique_ips: usize,
     pub uptime: String,
     pub cpu: String,
     pub ram: String,
+    pub top_ips: Vec<(String, u32)>,
+    pub chart_labels: String,
+    pub chart_data: String,
 }
 
 #[derive(Template)]
 #[template(path = "components/logs.htmx", escape = "html")]
 pub struct LogsTemplate {
     pub q: String,
+    pub exclude_ip: String,
     pub logs: Vec<LogEntry>,
     pub page: usize,
     pub page_size: usize,
@@ -86,6 +95,7 @@ pub struct TableTemplate {
     pub total: usize,
     pub total_pages: usize,
     pub q: String,
+    pub exclude_ip: String,
     pub sort_by: String,
     pub order: String,
 }
@@ -116,6 +126,7 @@ pub async fn dashboard_handler(State(state): State<AppState>) -> impl IntoRespon
         page: 1,
         page_size: 1,
         q: None,
+        exclude_ip: None,
         sort_by: "timestamp".to_string(),
         order: "desc".to_string(),
     };
@@ -124,6 +135,10 @@ pub async fn dashboard_handler(State(state): State<AppState>) -> impl IntoRespon
     let (uptime, cpu, ram) = get_system_metrics(&state);
 
     let username = env::var("ADMIN_USERNAME").unwrap_or_else(|_| "admin".to_string());
+
+    // Prepare chart data
+    let labels: Vec<String> = stats.requests_over_time.iter().map(|(t, _)| t.clone()).collect();
+    let data: Vec<u32> = stats.requests_over_time.iter().map(|(_, c)| *c).collect();
 
     HtmlTemplate(DashboardTemplate {
         username,
@@ -134,6 +149,10 @@ pub async fn dashboard_handler(State(state): State<AppState>) -> impl IntoRespon
         cpu,
         ram,
         nav_items: get_nav_menu("/admin"),
+        unique_ips: stats.unique_ips,
+        top_ips: stats.top_ips,
+        chart_labels: serde_json::to_string(&labels).unwrap_or_default(),
+        chart_data: serde_json::to_string(&data).unwrap_or_default(),
     })
 }
 
@@ -153,6 +172,7 @@ pub async fn overview_tab_handler(State(state): State<AppState>) -> impl IntoRes
         page: 1,
         page_size: 1,
         q: None,
+        exclude_ip: None,
         sort_by: "timestamp".to_string(),
         order: "desc".to_string(),
     };
@@ -160,13 +180,25 @@ pub async fn overview_tab_handler(State(state): State<AppState>) -> impl IntoRes
     let (_, meta, stats) = state.log_repository.find_all(&params);
     let (uptime, cpu, ram) = get_system_metrics(&state);
 
+    // Prepare chart data
+    let labels: Vec<String> = stats
+        .requests_over_time
+        .iter()
+        .map(|(t, _)| t.clone())
+        .collect();
+    let data: Vec<u32> = stats.requests_over_time.iter().map(|(_, c)| *c).collect();
+
     HtmlTemplate(OverviewTemplate {
         active_users: stats.active_users,
         total_events: meta.total,
         unique_device_ids: stats.unique_device_ids,
+        unique_ips: stats.unique_ips,
         uptime,
         cpu,
         ram,
+        top_ips: stats.top_ips,
+        chart_labels: serde_json::to_string(&labels).unwrap_or_default(),
+        chart_data: serde_json::to_string(&data).unwrap_or_default(),
     })
 }
 
@@ -178,6 +210,7 @@ pub async fn logs_tab_handler(
 
     HtmlTemplate(LogsTemplate {
         q: params.q.unwrap_or_default(),
+        exclude_ip: params.exclude_ip.unwrap_or_default(),
         logs,
         page: meta.page,
         page_size: meta.page_size,
@@ -201,6 +234,7 @@ pub async fn logs_handler(
         total: meta.total,
         total_pages: meta.total_pages,
         q: params.q.unwrap_or_default(),
+        exclude_ip: params.exclude_ip.unwrap_or_default(),
         sort_by: params.sort_by,
         order: params.order,
     })

@@ -1,59 +1,171 @@
-<div class="space-y-6">
-    <!-- System Overview Card -->
-    <div class="bg-black/20 backdrop-blur-md rounded-xl shadow-lg border border-white/5 overflow-hidden ring-1 ring-white/5 p-6">
-        <div class="flex items-center gap-4 mb-6">
-            <h2 class="text-lg font-semibold text-gray-100 flex items-center gap-2 mr-auto">
-                <svg class="w-5 h-5 text-[#38bdf8]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                Real-time Metrics
-            </h2>
-            
-            <!-- Real-time Metrics Toggle -->
-            <button id="ws-metrics-btn" 
-                    onclick="toggleMetricsWS()"
-                    class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 bg-[#34d399]/10 text-[#34d399] border border-[#34d399]/20 hover:bg-[#34d399]/20">
-                <span id="ws-metrics-icon" class="w-2 h-2 mr-2 rounded-full bg-gray-500"></span>
-                <span id="ws-metrics-text" class="mr-2">Metrics</span>
-            </button>
+<div class="space-y-6 animate-in fade-in duration-500">
+    <!-- Top Stats Row -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Active Users -->
+        <div class="bg-gray-800/50 backdrop-blur rounded-xl p-5 border border-white/5 relative overflow-hidden group">
+             <div class="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
+            <div class="relative">
+                <div class="text-sm font-medium text-gray-400">Active Users</div>
+                <div class="mt-2 text-3xl font-bold text-white flex items-baseline">
+                    <span id="active-users">{{ active_users }}</span>
+                    <span class="ml-2 text-xs font-medium text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded border border-emerald-400/20">Live</span>
+                </div>
+            </div>
+        </div>
 
+        <!-- Total Events -->
+        <div class="bg-gray-800/50 backdrop-blur rounded-xl p-5 border border-white/5 relative overflow-hidden group">
+            <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
+            <div class="relative">
+                <div class="text-sm font-medium text-gray-400">Total Events</div>
+                <div class="mt-2 text-3xl font-bold text-white">{{ total_events }}</div>
+            </div>
+        </div>
+
+        <!-- Unique IPs (New) -->
+        <div class="bg-gray-800/50 backdrop-blur rounded-xl p-5 border border-white/5 relative overflow-hidden group">
+            <div class="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
+            <div class="relative">
+                <div class="text-sm font-medium text-gray-400">Unique IPs</div>
+                <div class="mt-2 text-3xl font-bold text-white">{{ unique_ips }}</div>
+            </div>
         </div>
         
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <!-- Active Users -->
-            <div class="p-4 rounded-lg bg-white/5 border border-white/5 group hover:border-[#38bdf8]/30 transition-all duration-300">
-                <div class="text-sm text-gray-400 mb-1">Active Users</div>
-                <div class="text-2xl font-bold text-gray-100 group-hover:text-[#38bdf8] transition-colors" id="active-users">{{ active_users }}</div>
-            </div>
-
-            <!-- CPU Usage -->
-            <div class="p-4 rounded-lg bg-white/5 border border-white/5 group hover:border-[#f87171]/30 transition-all duration-300">
-                <div class="text-sm text-gray-400 mb-1">CPU Usage</div>
-                <div class="text-2xl font-bold text-gray-100 group-hover:text-[#f87171] transition-colors" id="cpu-usage">{{ cpu }}%</div>
-            </div>
-
-            <!-- RAM Usage -->
-            <div class="p-4 rounded-lg bg-white/5 border border-white/5 group hover:border-[#a78bfa]/30 transition-all duration-300">
-                <div class="text-sm text-gray-400 mb-1">RAM Usage</div>
-                <div class="text-2xl font-bold text-gray-100 group-hover:text-[#a78bfa] transition-colors" id="ram-usage">{{ ram }}</div>
-            </div>
-
-            <!-- Uptime -->
-            <div class="p-4 rounded-lg bg-white/5 border border-white/5 group hover:border-[#34d399]/30 transition-all duration-300">
-                <div class="text-sm text-gray-400 mb-1">Uptime</div>
-                <div class="text-2xl font-bold text-gray-100 group-hover:text-[#34d399] transition-colors" id="uptime">{{ uptime }}</div>
+         <!-- Unique Devices -->
+        <div class="bg-gray-800/50 backdrop-blur rounded-xl p-5 border border-white/5 relative overflow-hidden group">
+            <div class="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent opacity-0 group-hover:opacity-100 transition duration-500"></div>
+            <div class="relative">
+                <div class="text-sm font-medium text-gray-400">Unique Devices</div>
+                <div class="mt-2 text-3xl font-bold text-white">{{ unique_device_ids }}</div>
             </div>
         </div>
     </div>
-    
-    <!-- Additional Stats -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-black/20 backdrop-blur-md rounded-xl p-6 border border-white/5">
-            <h3 class="text-sm font-medium text-gray-400 uppercase tracking-wider mb-2">Total Events</h3>
-            <div class="text-3xl font-bold text-gray-100">{{ total_events }}</div>
+
+     <!-- System Performance Row -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Uptime -->
+        <div class="bg-gray-800/50 backdrop-blur rounded-xl p-5 border border-white/5">
+            <div class="text-sm font-medium text-gray-400 mb-1">System Uptime</div>
+            <div class="text-xl font-mono text-white" id="uptime">{{ uptime }}</div>
         </div>
-        <div class="bg-black/20 backdrop-blur-md rounded-xl p-6 border border-white/5">
-             <h3 class="text-sm font-medium text-gray-400 uppercase tracking-wider mb-2">Unique Devices</h3>
-             <div class="text-3xl font-bold text-gray-100">{{ unique_device_ids }}</div>
+          <div class="bg-gray-800/50 backdrop-blur rounded-xl p-5 border border-white/5">
+            <div class="flex items-center justify-between">
+                 <div class="text-sm font-medium text-gray-400">CPU Usage</div>
+                 <div class="text-xs text-gray-500" id="cpu-usage">{{ cpu }}%</div>
+            </div>
+             <div class="mt-4 w-full bg-gray-700 rounded-full h-2.5">
+                <div class="bg-blue-600 h-2.5 rounded-full transition-all duration-500" style="width: {{ cpu }}%"></div>
+            </div>
+        </div>
+         <div class="bg-gray-800/50 backdrop-blur rounded-xl p-5 border border-white/5">
+            <div class="flex items-center justify-between">
+                 <div class="text-sm font-medium text-gray-400">RAM Usage</div>
+                 <div class="text-xs text-gray-500" id="ram-usage">{{ ram }}</div>
+            </div>
+              <!-- Placeholder bar for RAM -->
+              <div class="mt-4 w-full bg-gray-700 rounded-full h-2.5">
+                <div class="bg-purple-600 h-2.5 rounded-full" style="width: 50%"></div> <!-- mocked width -->
+            </div>
         </div>
     </div>
-    
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Chart Section -->
+        <div class="lg:col-span-2 bg-gray-800/50 backdrop-blur rounded-xl p-5 border border-white/5">
+            <h3 class="text-lg font-medium text-gray-200 mb-4">Traffic Overview</h3>
+            <div id="trafficChart" class="w-full h-[300px] flex items-center justify-center text-gray-500 text-sm">
+                <!-- Chart container -->
+            </div>
+        </div>
+
+        <!-- Top IPs Section -->
+        <div class="bg-gray-800/50 backdrop-blur rounded-xl p-5 border border-white/5">
+            <h3 class="text-lg font-medium text-gray-200 mb-4">Top Active IPs</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-left text-sm whitespace-nowrap">
+                    <thead>
+                        <tr class="border-b border-white/10 text-gray-400">
+                            <th class="pb-2">IP Address</th>
+                            <th class="pb-2 text-right">Requests</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-gray-300 divide-y divide-white/5">
+                         {% for (ip, count) in top_ips %}
+                        <tr class="group hover:bg-white/5 transition-colors">
+                            <td class="py-2 font-mono text-xs">{{ ip }}</td>
+                            <td class="py-2 text-right font-medium">{{ count }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- WebSocket Controls -->
+    <div class="flex justify-end gap-2 text-sm text-gray-400">
+        <button id="ws-metrics-btn" onclick="toggleMetricsWS()" 
+                class="flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all bg-[#34d399]/10 text-[#34d399] border-[#34d399]/20 hover:bg-[#34d399]/20">
+            <span id="ws-metrics-icon" class="w-2 h-2 rounded-full bg-gray-500"></span>
+            <span id="ws-metrics-text">Connect Metrics</span>
+        </button>
+    </div>
 </div>
+
+<script>
+    // Initialize Chart with data from HTMX swap
+    (function() {
+         // Data injected from backend via template
+        var labels = {{ chart_labels|safe }};
+        var data = {{ chart_data|safe }};
+
+        if (labels && data && document.querySelector("#trafficChart")) {
+             var options = {
+                series: [{
+                    name: 'Requests',
+                    data: data
+                }],
+                chart: {
+                    type: 'area',
+                    height: 300,
+                    toolbar: { show: false },
+                    background: 'transparent',
+                    animations: { enabled: true }
+                },
+                dataLabels: { enabled: false },
+                stroke: { curve: 'smooth', width: 2, colors: ['#38bdf8'] },
+                xaxis: {
+                    categories: labels,
+                    labels: { style: { colors: '#9ca3af' } },
+                    axisBorder: { show: false },
+                    axisTicks: { show: false }
+                },
+                yaxis: {
+                    labels: { style: { colors: '#9ca3af' } }
+                },
+                grid: {
+                    borderColor: '#374151',
+                    strokeDashArray: 4,
+                },
+                theme: { mode: 'dark' },
+                fill: {
+                    type: 'gradient',
+                    gradient: {
+                        shadeIntensity: 1,
+                        opacityFrom: 0.7,
+                        opacityTo: 0.1,
+                        stops: [0, 90, 100],
+                         colorStops: [
+                            { offset: 0, color: "#38bdf8", opacity: 0.6 },
+                            { offset: 100, color: "#38bdf8", opacity: 0.1 },
+                          ]
+                    }
+                },
+                tooltip: { theme: 'dark' }
+            };
+
+            var chart = new ApexCharts(document.querySelector("#trafficChart"), options);
+            chart.render();
+        }
+    })();
+</script>

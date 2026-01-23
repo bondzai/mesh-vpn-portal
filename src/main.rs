@@ -51,8 +51,14 @@ async fn main() {
                 .route("/htmx/overview", get(api::htmx::overview_tab_handler))
                 .route("/htmx/logs-tab", get(api::htmx::logs_tab_handler))
                 .route("/htmx/logs", get(api::htmx::logs_handler))
-                .route("/htmx/active-users", get(api::htmx::active_users_tab_handler))
-                .route("/api/logs", get(api::admin::get_logs).delete(api::admin::clear_logs))
+                .route(
+                    "/htmx/active-users",
+                    get(api::htmx::active_users_tab_handler),
+                )
+                .route(
+                    "/api/logs",
+                    get(api::admin::get_logs).delete(api::admin::clear_logs),
+                )
                 .route("/api/export", get(api::admin::download_logs))
                 .route("/api/status", get(api::admin::get_system_status))
                 .route_layer(axum::middleware::from_fn_with_state(
@@ -76,14 +82,14 @@ async fn main() {
             } else {
                 use axum::http::HeaderValue;
                 use axum::http::Method;
-                
+
                 let origins: Vec<HeaderValue> = allowed_origins
                     .iter()
                     .map(|s| s.parse::<HeaderValue>().unwrap())
                     .collect();
-                    
+
                 println!("Configuring CORS for origins: {:?}", allowed_origins);
-                
+
                 CorsLayer::new()
                     .allow_origin(origins)
                     .allow_methods([Method::GET, Method::POST, Method::DELETE, Method::OPTIONS])

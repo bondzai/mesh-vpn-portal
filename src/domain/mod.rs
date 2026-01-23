@@ -72,6 +72,8 @@ pub struct LogStats {
     pub unique_device_ids: usize,
     pub active_users: u32,
     pub last_activity: String,
+    pub top_ips: Vec<(String, u32)>,
+    pub requests_over_time: Vec<(String, u32)>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -81,6 +83,7 @@ pub struct LogQuery {
     #[serde(default = "default_page_size")]
     pub page_size: usize,
     pub q: Option<String>,
+    pub exclude_ip: Option<String>,
     #[serde(default = "default_sort_by")]
     pub sort_by: String,
     #[serde(default = "default_order")]

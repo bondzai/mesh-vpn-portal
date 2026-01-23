@@ -11,7 +11,7 @@
                             style="width: 150px; min-width: 100px; position: relative;"
                             class="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider cursor-pointer transition-colors hover:bg-white/5 hover:text-gray-200 select-none"
                             hx-get="/htmx/logs?sort_by={{key}}&order={% if sort_by == *key && order == "asc" %}desc{%
-                            else %}asc{% endif %}&q={{q}}&page=1&page_size={{page_size}}"
+                            else %}asc{% endif %}&q={{q}}&exclude_ip={{exclude_ip}}&page=1&page_size={{page_size}}"
                             hx-target="#log-table-container">
                             <div class="flex items-center gap-1 group">
                                 {{ label }}
@@ -76,12 +76,12 @@
         class="flex items-center justify-between border-t border-white/5 bg-black/20 backdrop-blur-md px-4 py-3 sm:px-6 rounded-xl shadow-lg border border-white/5 transition-all duration-300 hover:border-white/10 ring-1 ring-white/5">
         <div class="flex flex-1 justify-between sm:hidden">
             <button {% if page> 1
-                %}hx-get="/htmx/logs?page={{page-1}}&q={{q}}&sort_by={{sort_by}}&order={{order}}&page_size={{page_size}}"
+                %}hx-get="/htmx/logs?page={{page-1}}&q={{q}}&exclude_ip={{exclude_ip}}&sort_by={{sort_by}}&order={{order}}&page_size={{page_size}}"
                 hx-target="#log-table-container"{% else %}disabled{% endif %}
                 class="relative inline-flex items-center rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm
                 font-medium text-gray-300 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm">Previous</button>
             <button {% if page < total_pages
-                %}hx-get="/htmx/logs?page={{page+1}}&q={{q}}&sort_by={{sort_by}}&order={{order}}&page_size={{page_size}}"
+                %}hx-get="/htmx/logs?page={{page+1}}&q={{q}}&exclude_ip={{exclude_ip}}&sort_by={{sort_by}}&order={{order}}&page_size={{page_size}}"
                 hx-target="#log-table-container" {% else %}disabled{% endif %}
                 class="relative ml-3 inline-flex items-center rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-gray-300 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm">Next</button>
         </div>
@@ -97,6 +97,7 @@
             <div>
                  <form class="flex items-center gap-2" hx-get="/htmx/logs" hx-target="#log-table-container" hx-trigger="change">
                     <input type="hidden" name="q" value="{{ q }}">
+                    <input type="hidden" name="exclude_ip" value="{{ exclude_ip }}">
                     <input type="hidden" name="sort_by" value="{{ sort_by }}">
                     <input type="hidden" name="order" value="{{ order }}">
                     <label for="page_size" class="text-sm text-gray-400">Rows per page</label>
@@ -111,7 +112,7 @@
             <div>
                 <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
                     <button {% if page> 1
-                        %}hx-get="/htmx/logs?page={{page-1}}&q={{q}}&sort_by={{sort_by}}&order={{order}}&page_size={{page_size}}"
+                        %}hx-get="/htmx/logs?page={{page-1}}&q={{q}}&exclude_ip={{exclude_ip}}&sort_by={{sort_by}}&order={{order}}&page_size={{page_size}}"
                         hx-target="#log-table-container"{% else %}disabled{% endif %}
                         class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset
                         ring-white/10 hover:bg-white/10 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-white/5">
@@ -126,7 +127,7 @@
                         class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-200 ring-1 ring-inset ring-white/10 focus:outline-offset-0 bg-white/10">Page
                         {{ page }} of {{ total_pages }}</span>
                     <button {% if page < total_pages
-                        %}hx-get="/htmx/logs?page={{page+1}}&q={{q}}&sort_by={{sort_by}}&order={{order}}&page_size={{page_size}}"
+                        %}hx-get="/htmx/logs?page={{page+1}}&q={{q}}&exclude_ip={{exclude_ip}}&sort_by={{sort_by}}&order={{order}}&page_size={{page_size}}"
                         hx-target="#log-table-container" {% else %}disabled{% endif %}
                         class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-white/10 hover:bg-white/10 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-white/5">
                         <span class="sr-only">Next</span>

@@ -19,6 +19,18 @@
             </div>
 
             <div class="sm:col-span-3">
+                <label for="exclude_ip" class="block text-sm font-medium text-gray-300 mb-1">Exclude IP</label>
+                <div class="relative rounded-lg shadow-sm group">
+                    <input type="text" 
+                           name="exclude_ip" 
+                           id="exclude_ip" 
+                           value="{{ exclude_ip }}"
+                           class="focus:ring-2 focus:ring-[#f87171]/50 focus:border-[#f87171] block w-full sm:text-sm border-white/10 rounded-lg bg-black/20 text-gray-200 placeholder-gray-500 py-2.5 transition-all duration-200 group-hover:border-white/20 group-hover:bg-black/30" 
+                           placeholder="Enter IP to exclude (comma separated)...">
+                </div>
+            </div>
+
+            <div class="sm:col-span-3">
                 <div class="flex gap-4 items-end">
                     <button type="button" 
                             hx-delete="/api/logs"
