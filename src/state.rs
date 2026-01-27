@@ -1,9 +1,10 @@
 use crate::domain::logger::EventLogger; // Import trait
 use crate::domain::repositories::LogRepository;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 use std::time::Instant;
 use sysinfo::System; // Ensure trait is imported for refresh methods
 use tokio::sync::broadcast;
+use crate::services::wakatime::WakatimeData;
 
 use axum::extract::FromRef;
 use axum_extra::extract::cookie::Key;
@@ -27,6 +28,7 @@ pub struct AppState {
     pub system: Arc<Mutex<System>>,
     pub start_time: Instant,
     pub key: Key,
+    pub wakatime_data: Arc<RwLock<Option<WakatimeData>>>,
 }
 
 impl AppState {
@@ -49,6 +51,7 @@ impl AppState {
             system: Arc::new(Mutex::new(sys)),
             start_time: Instant::now(),
             key: Key::generate(),
+            wakatime_data: Arc::new(RwLock::new(None)),
         }
     }
 
@@ -82,13 +85,7 @@ impl AppState {
         if let Some(conn) = conn_map.remove(device_id) {
             let duration = conn.connected_at.elapsed();
             let secs = duration.as_secs();
-            let formatted = if secs < 60 {
-                format!("{}s", secs)
-            } else if secs < 3600 {
-                format!("{}m {}s", secs / 60, secs % 60)
-            } else {
-                format!("{}h {}m", secs / 3600, (secs % 3600) / 60)
-            };
+            let formatted = crate::utils::format_duration(secs);
             duration_str = Some(formatted);
         }
 

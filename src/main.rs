@@ -9,9 +9,11 @@ mod infrastructure;
 mod repositories;
 mod services;
 mod state;
+mod utils;
 
 use infrastructure::file_logger::FileLogger;
 use repositories::log_repository::FileLogRepository;
+use services::wakatime::{WakatimeData, WakatimeService};
 use state::AppState;
 
 pub mod admin {
@@ -33,6 +35,55 @@ async fn main() {
             interval.tick().await;
             let stats = app_state_for_task.get_system_metrics();
             let _ = app_state_for_task.system_tx.send(stats);
+        }
+    });
+
+    // Spawn background task to fetch WakaTime stats
+    let app_state_waka = app_state.clone();
+    tokio::spawn(async move {
+        let waka_service = WakatimeService::new();
+        // Fetch immediately on startup
+        println!("Fetching initial WakaTime stats...");
+        
+        let all_time = waka_service.fetch_all_time_stats().await.ok();
+        let summaries = waka_service.fetch_summaries().await.ok();
+
+        if all_time.is_some() || summaries.is_some() {
+             let mut data = app_state_waka.wakatime_data.write().unwrap();
+             *data = Some(WakatimeData {
+                 all_time,
+                 summaries,
+             });
+             println!("Initial WakaTime stats fetched.");
+        } else {
+             eprintln!("Failed to fetch initial WakaTime stats");
+        }
+
+        let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(3600)); // Every hour
+        loop {
+            interval.tick().await;
+            
+            let all_time = waka_service.fetch_all_time_stats().await.ok();
+            let summaries = waka_service.fetch_summaries().await.ok();
+
+            if all_time.is_some() || summaries.is_some() {
+                let mut data = app_state_waka.wakatime_data.write().unwrap();
+                if let Some(existing) = data.as_mut() {
+                    if let Some(at) = all_time {
+                        existing.all_time = Some(at);
+                    }
+                    if let Some(summ) = summaries {
+                        existing.summaries = Some(summ);
+                    }
+                } else {
+                    *data = Some(WakatimeData {
+                        all_time,
+                        summaries,
+                    });
+                }
+            } else {
+                 eprintln!("Failed to fetch WakaTime stats");
+            }
         }
     });
 
@@ -66,6 +117,7 @@ async fn main() {
                     api::middleware::auth,
                 )),
         )
+        .route("/api/wakatime", get(api::wakatime::get_wakatime_stats))
         .with_state(app_state)
         .layer({
             // Read allowed origins from env
@@ -82,6 +134,7 @@ async fn main() {
             } else {
                 use axum::http::HeaderValue;
                 use axum::http::Method;
+                use axum::http::header;
 
                 let origins: Vec<HeaderValue> = allowed_origins
                     .iter()
@@ -93,7 +146,13 @@ async fn main() {
                 CorsLayer::new()
                     .allow_origin(origins)
                     .allow_methods([Method::GET, Method::POST, Method::DELETE, Method::OPTIONS])
-                    .allow_headers(tower_http::cors::Any)
+                    .allow_headers([
+                        header::CONTENT_TYPE,
+                        header::AUTHORIZATION,
+                        header::ACCEPT,
+                        header::ORIGIN,
+                    ])
+                    .allow_credentials(true)
             }
         });
 

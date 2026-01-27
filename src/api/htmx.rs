@@ -247,13 +247,7 @@ pub async fn active_users_tab_handler(State(state): State<AppState>) -> impl Int
         .map(|c| {
             let duration = c.connected_at.elapsed();
             let secs = duration.as_secs();
-            let duration_str = if secs < 60 {
-                format!("{}s", secs)
-            } else if secs < 3600 {
-                format!("{}m {}s", secs / 60, secs % 60)
-            } else {
-                format!("{}h {}m", secs / 3600, (secs % 3600) / 60)
-            };
+            let duration_str = crate::utils::format_duration(secs);
             ActiveUserDisplay {
                 device_id: c.device_id.clone(),
                 ip: c.ip.clone(),

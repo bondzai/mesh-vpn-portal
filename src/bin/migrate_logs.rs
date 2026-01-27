@@ -15,6 +15,17 @@ struct LogEntry {
     raw: String,
 }
 
+// Helper function to format duration
+fn format_duration(secs: i64) -> String {
+    if secs < 60 {
+        format!("{}s", secs)
+    } else if secs < 3600 {
+        format!("{}m {}s", secs / 60, secs % 60)
+    } else {
+        format!("{}h {}m", secs / 3600, (secs % 3600) / 60)
+    }
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let path = "server.log";
     if !std::path::Path::new(path).exists() {
@@ -25,41 +36,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let content = fs::read_to_string(path)?;
     let mut logs: Vec<LogEntry> = content
         .lines()
-        .filter_map(|line| {
-            let parts: Vec<&str> = line.split(',').collect();
-            let len = parts.len();
-            if len >= 6 {
-                let duration = if len >= 7 && !parts[6].is_empty() {
-                    Some(parts[6].to_string())
-                } else {
-                    None
-                };
-                Some(LogEntry {
-                    timestamp: parts[0].to_string(),
-                    ip: parts[1].to_string(),
-                    device: parts[2].to_string(),
-                    device_id: parts[3].to_string(),
-                    action: parts[4].to_string(),
-                    count: parts[5].parse().unwrap_or(0),
-                    duration,
-                    raw: line.to_string(),
-                })
-            } else if len == 5 {
-                // Handle old format without device_id
-                Some(LogEntry {
-                    timestamp: parts[0].to_string(),
-                    ip: parts[1].to_string(),
-                    device: parts[2].to_string(),
-                    device_id: "N/A".to_string(),
-                    action: parts[3].to_string(),
-                    count: parts[4].parse().unwrap_or(0),
-                    duration: None,
-                    raw: line.to_string(),
-                })
-            } else {
-                None
-            }
-        })
+        .filter_map(parse_log_line)
         .collect();
 
     // Sort by timestamp properly to ensure chronological processing
@@ -70,33 +47,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Process logs to calculate duration
     for mut log in logs {
-        if log.action == "CONNECTED" {
-            // Store start timestamp
-            start_times.insert(log.device_id.clone(), log.timestamp.clone());
-        } else if log.action == "DISCONNECTED" {
-            if let Some(start_ts) = start_times.remove(&log.device_id) {
-                // Determine format
-                // Assuming format: %Y-%m-%d %H:%M:%S %z
-                // e.g. 2026-01-13 03:10:05 +0700
-                if let Ok(start) = DateTime::parse_from_str(&start_ts, "%Y-%m-%d %H:%M:%S %z") {
-                    if let Ok(end) =
-                        DateTime::parse_from_str(&log.timestamp, "%Y-%m-%d %H:%M:%S %z")
-                    {
-                        let duration = end.signed_duration_since(start);
-                        let secs = duration.num_seconds();
-                        if secs >= 0 {
-                            let formatted = if secs < 60 {
-                                format!("{}s", secs)
-                            } else if secs < 3600 {
-                                format!("{}m {}s", secs / 60, secs % 60)
-                            } else {
-                                format!("{}h {}m", secs / 3600, (secs % 3600) / 60)
-                            };
-                            log.duration = Some(formatted);
-                        }
-                    }
-                }
+        match log.action.as_str() {
+            "CONNECTED" => {
+                start_times.insert(log.device_id.clone(), log.timestamp.clone());
             }
+            "DISCONNECTED" => {
+                 process_disconnected(&mut log, &mut start_times);
+            }
+            _ => {}
         }
         updated_logs.push(log);
     }
@@ -116,4 +74,49 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Migration complete. Processed {} logs.", count);
     Ok(())
+}
+
+fn parse_log_line(line: &str) -> Option<LogEntry> {
+    let parts: Vec<&str> = line.split(',').collect();
+    let len = parts.len();
+
+    if len < 5 {
+        return None;
+    }
+
+    let is_old_format = len == 5;
+    let device_id = if is_old_format { "N/A".to_string() } else { parts[3].to_string() };
+    let action = if is_old_format { parts[3].to_string() } else { parts[4].to_string() };
+    let count = if is_old_format { parts[4].parse().unwrap_or(0) } else { parts[5].parse().unwrap_or(0) };
+    
+    let duration = if len >= 7 && !parts[6].is_empty() {
+        Some(parts[6].to_string())
+    } else {
+        None
+    };
+
+    Some(LogEntry {
+        timestamp: parts[0].to_string(),
+        ip: parts[1].to_string(),
+        device: parts[2].to_string(),
+        device_id,
+        action,
+        count,
+        duration,
+        raw: line.to_string(),
+    })
+}
+
+fn process_disconnected(log: &mut LogEntry, start_times: &mut HashMap<String, String>) {
+    if let Some(start_ts) = start_times.remove(&log.device_id) {
+        if let Ok(start) = DateTime::parse_from_str(&start_ts, "%Y-%m-%d %H:%M:%S %z") {
+            if let Ok(end) = DateTime::parse_from_str(&log.timestamp, "%Y-%m-%d %H:%M:%S %z") {
+                let duration = end.signed_duration_since(start);
+                let secs = duration.num_seconds();
+                if secs >= 0 {
+                    log.duration = Some(format_duration(secs));
+                }
+            }
+        }
+    }
 }

@@ -35,6 +35,37 @@ impl FileLogRepository {
         }
         device.chars().take(30).collect()
     }
+
+    fn parse_log_entry(line: String) -> Option<LogEntry> {
+        let parts: Vec<&str> = line.split(',').collect();
+        let len = parts.len();
+
+        if len < 5 {
+            return None;
+        }
+
+        let is_old_format = len == 5;
+        let device_id = if is_old_format { "N/A".to_string() } else { parts[3].to_string() };
+        let action = if is_old_format { parts[3].to_string() } else { parts[4].to_string() };
+        let count = if is_old_format { parts[4].parse().unwrap_or(0) } else { parts[5].parse().unwrap_or(0) };
+        
+        let duration = if len >= 7 && !parts[6].is_empty() {
+            Some(parts[6].to_string())
+        } else {
+            None
+        };
+
+        Some(LogEntry {
+            timestamp: parts[0].to_string(),
+            ip: parts[1].to_string(),
+            device: parts[2].to_string(),
+            device_id,
+            action,
+            count,
+            duration,
+            raw: line,
+        })
+    }
 }
 
 impl LogRepository for FileLogRepository {
@@ -120,39 +151,7 @@ impl LogRepository for FileLogRepository {
 
         for line_res in reader.lines() {
             if let Ok(line) = line_res {
-                let parts: Vec<&str> = line.split(',').collect();
-                let len = parts.len();
-
-                let entry = if len >= 6 {
-                    let duration = if len >= 7 && !parts[6].is_empty() {
-                        Some(parts[6].to_string())
-                    } else {
-                        None
-                    };
-                    Some(LogEntry {
-                        timestamp: parts[0].to_string(),
-                        ip: parts[1].to_string(),
-                        device: parts[2].to_string(),
-                        device_id: parts[3].to_string(),
-                        action: parts[4].to_string(),
-                        count: parts[5].parse().unwrap_or(0),
-                        duration,
-                        raw: line.clone(),
-                    })
-                } else if len == 5 {
-                    Some(LogEntry {
-                        timestamp: parts[0].to_string(),
-                        ip: parts[1].to_string(),
-                        device: parts[2].to_string(),
-                        device_id: "N/A".to_string(),
-                        action: parts[3].to_string(),
-                        count: parts[4].parse().unwrap_or(0),
-                        duration: None,
-                        raw: line.clone(),
-                    })
-                } else {
-                    None
-                };
+                let entry = Self::parse_log_entry(line);
 
                 if let Some(log) = entry {
                     // Filter

@@ -21,3 +21,6 @@ server.log
 
 # Environment variables
 .env
+
+# Cache
+*cache.json
