@@ -1,40 +1,106 @@
 const WebSocket = require('ws');
 
-function connectClient(id, onMessage) {
-    const ws = new WebSocket('ws://localhost:3000/ws');
-    ws.on('open', () => console.log(`Client ${id} connected`));
-    ws.on('message', (data) => {
-        console.log(`Client ${id} received: ${data}`);
-        onMessage(JSON.parse(data));
-    });
-    return ws;
-}
+/**
+ * WebSocket Broadcast Verification Script
+ * Tests that WebSocket broadcasts work correctly when clients connect/disconnect
+ */
 
-// Logic:
-// 1. Client 1 connects. Should receive activeUsers >= 1.
-// 2. Client 2 connects. Client 1 should receive update with activeUsers += 1.
+const WS_URL = 'ws://localhost:3000/client/ws';
+const CONNECTION_DELAY = 500; // ms
 
-console.log('Starting broadcast test...');
+class WebSocketClient {
+    constructor(id, url) {
+        this.id = id;
+        this.url = url;
+        this.ws = null;
+        this.initialState = null;
+    }
 
-let client1Params = null;
+    connect(onMessage) {
+        return new Promise((resolve, reject) => {
+            this.ws = new WebSocket(this.url);
 
-const ws1 = connectClient(1, (data) => {
-    if (!client1Params) {
-        // Initial state
-        client1Params = data;
-        console.log('Client 1 initial state:', data);
-
-        // Connect client 2 after a short delay
-        setTimeout(() => {
-            const ws2 = connectClient(2, (data2) => {
-                // Client 2 just needs to connect to trigger update on Client 1
+            this.ws.on('open', () => {
+                console.log(`✓ Client ${this.id} connected`);
+                resolve();
             });
-        }, 500);
-    } else {
-        // Update received
-        if (data.activeUsers === client1Params.activeUsers + 1) {
-            console.log('SUCCESS: Client 1 received update from Client 2 connection');
-            process.exit(0);
+
+            this.ws.on('message', (data) => {
+                try {
+                    const parsed = JSON.parse(data);
+                    console.log(`  Client ${this.id} received:`, parsed);
+                    onMessage(parsed);
+                } catch (err) {
+                    console.error(`✗ Client ${this.id} parse error:`, err.message);
+                }
+            });
+
+            this.ws.on('error', (err) => {
+                console.error(`✗ Client ${this.id} error:`, err.message);
+                reject(err);
+            });
+
+            this.ws.on('close', () => {
+                console.log(`  Client ${this.id} disconnected`);
+            });
+        });
+    }
+
+    close() {
+        if (this.ws) {
+            this.ws.close();
         }
     }
-});
+}
+
+async function runTest() {
+    console.log('Starting WebSocket broadcast test...\n');
+
+    const client1 = new WebSocketClient(1, WS_URL);
+    let client2;
+
+    try {
+        // Connect client 1 and wait for initial state
+        await client1.connect((data) => {
+            if (!client1.initialState) {
+                client1.initialState = data;
+                console.log('  Initial active users:', data.activeUsers);
+
+                // Connect client 2 after delay
+                setTimeout(async () => {
+                    client2 = new WebSocketClient(2, WS_URL);
+                    await client2.connect(() => { });
+                }, CONNECTION_DELAY);
+            } else {
+                // Check if broadcast received after client 2 connected
+                const expectedUsers = client1.initialState.activeUsers + 1;
+                if (data.activeUsers === expectedUsers) {
+                    console.log('\n✓ SUCCESS: Broadcast working correctly!');
+                    console.log(`  Active users updated from ${client1.initialState.activeUsers} to ${data.activeUsers}`);
+
+                    // Clean up
+                    client1.close();
+                    if (client2) client2.close();
+                    process.exit(0);
+                } else {
+                    console.error(`✗ FAIL: Expected ${expectedUsers} users, got ${data.activeUsers}`);
+                    process.exit(1);
+                }
+            }
+        });
+
+        // Timeout after 5 seconds
+        setTimeout(() => {
+            console.error('\n✗ TIMEOUT: Test did not complete in time');
+            client1.close();
+            if (client2) client2.close();
+            process.exit(1);
+        }, 5000);
+
+    } catch (err) {
+        console.error('\n✗ Test failed:', err.message);
+        process.exit(1);
+    }
+}
+
+runTest();
